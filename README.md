@@ -138,8 +138,10 @@ That prints a short summary and the same style of line that would be appended wh
 **Typical NORA notifications** get one line per email (no booking ID in the line; times are **US `M/d/y` with 12-hour clock**):
 
 ```text
-2026-04-10T08:42:11Z | CANCELLED | Brian Sperlongano | 3/6/2026 11:30 AM -> 3/8/2026 11:00 AM | 1 member
+04/10/26 4:42 AM | CANCELLED | Brian Sperlongano | 3/6/2026 11:30 AM -> 3/8/2026 11:00 AM | 1 member
 ```
+
+The leading stamp is **when the message was processed**: **mm/dd/yy** and **12-hour time** in **US Eastern** (`America/New_York`, EST/EDT).
 
 Occupancy on that line is plain English (`1 member`, `2 guests`, …); **zero categories are omitted**. If no one was counted, the line ends after the dates (no `members=0`-style fields).
 
@@ -148,7 +150,7 @@ The same booking might also be summarized for people as: `CANCELLED: Brian Sperl
 **Mail from a real person to the bookings address** that is not a booking template is usually logged more simply:
 
 ```text
-2026-04-10T08:42:11Z | UNKNOWN | from="Name" <email@example.com> | subject=Their subject line
+04/10/26 4:42 AM | UNKNOWN | from="Name" <email@example.com> | subject=Their subject line
 ```
 
 The script recognizes common NORA email types: **confirmed** and **tentative** booking notices (both logged as **BOOKED**), **cancelled**, and short **“booking NP… was edited”** messages (**EDITED**). Anything else is **UNKNOWN**.
@@ -181,6 +183,7 @@ docker run --rm -v "$PWD":/app -w /app php:8.2-cli php tests/run_tests.php
 |----------|------|
 | [`bin/process_booking_email.php`](bin/process_booking_email.php) | Entry point for the pipe and for manual runs |
 | [`bin/notify_reservationist.php`](bin/notify_reservationist.php) | Cron job: email log, then roll log file |
+| [`src/LogTimestamp.php`](src/LogTimestamp.php) | Processed-at stamp for logs: mm/dd/yy, 12-hour, US Eastern |
 | [`src/`](src/) | Parsing, formatting, MIME handling, log append |
 | [`sample-emails/`](sample-emails/) | Example messages for tests |
 | [`tests/run_tests.php`](tests/run_tests.php) | Self-contained checks (no Composer) |

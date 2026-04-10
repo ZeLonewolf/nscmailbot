@@ -270,7 +270,7 @@ final class BookingParser
         $occPos = self::lastStringPosition($prefix, $occupant);
         $bunkPart = trim(substr($prefix, 0, $occPos));
         $afterOcc = trim(substr($prefix, $occPos + strlen($occupant)));
-        $categoryRaw = self::extractBalancedParens($afterOcc);
+        $categoryRaw = self::extractCategoryParenBlock($afterOcc);
 
         $dates = self::extractMdYDates($afterChunk);
 
@@ -281,7 +281,7 @@ final class BookingParser
             'cost' => trim($priceLiteral),
             'per_bunk_start' => $dates[0] ?? null,
             'per_bunk_end' => $dates[1] ?? null,
-            'classification' => self::classifyCategory($categoryRaw),
+            'classification' => self::classifyCategory($categoryRaw, $afterOcc),
         ];
     }
 
@@ -324,6 +324,38 @@ final class BookingParser
     }
 
     /**
+     * Find the first '(' in occupant tail (after NBSP/BOM junk) and take one balanced (...).
+     */
+    private static function extractCategoryParenBlock(string $afterOcc): ?string
+    {
+        $s = preg_replace('/^[\s\x{00A0}\x{FEFF}]+/u', '', trim($afterOcc)) ?? trim($afterOcc);
+        $pos = strpos($s, '(');
+        if ($pos === false) {
+            return null;
+        }
+        if ($pos > 0) {
+            $s = substr($s, $pos);
+        }
+
+        return self::extractBalancedParens($s);
+    }
+
+    /** Text inside the outermost (...); avoids trim() with ')' that strips nested closers. */
+    private static function innerCategoryText(?string $categoryRaw): string
+    {
+        if ($categoryRaw === null || trim($categoryRaw) === '') {
+            return '';
+        }
+        $s = trim($categoryRaw);
+        $full = self::extractBalancedParens($s);
+        if ($full !== null && strlen($full) >= 2) {
+            return trim(substr($full, 1, -1));
+        }
+
+        return $s;
+    }
+
+    /**
      * @return list<string>
      */
     private static function extractMdYDates(string $afterChunk): array
@@ -337,16 +369,19 @@ final class BookingParser
     /**
      * @return 'member'|'child'|'guest'|'other'
      */
-    private static function classifyCategory(?string $categoryRaw): string
+    private static function classifyCategory(?string $categoryRaw, string $afterOccFallback = ''): string
     {
-        if ($categoryRaw === null || trim($categoryRaw) === '') {
+        $inner = self::innerCategoryText($categoryRaw);
+        if ($inner === '') {
+            $inner = self::snippetForGuestHint($afterOccFallback);
+        }
+        if ($inner === '') {
             return 'other';
         }
-        $inner = trim($categoryRaw, " ()\t\n\r\0\x0B");
         $low = strtolower($inner);
 
-        // NSC compound labels: treat "Guest or Social Member" as guest.
-        if (strpos($low, 'guest') !== false || strpos($low, 'social member') !== false) {
+        // NSC "Guest or Social Member (Age 12+)" — must precede \bmember\b ("Social Member" contains "member").
+        if (self::looksLikeGuestOrSocialMember($low, $inner)) {
             return 'guest';
         }
 
@@ -364,6 +399,30 @@ final class BookingParser
         }
 
         return 'other';
+    }
+
+    private static function snippetForGuestHint(string $afterOcc): string
+    {
+        if (preg_match('/Guest\s+or\s+Social\s+Member/i', $afterOcc) === 1) {
+            return 'guest or social member';
+        }
+
+        return '';
+    }
+
+    private static function looksLikeGuestOrSocialMember(string $low, string $inner): bool
+    {
+        if (strpos($low, 'guest or social') !== false) {
+            return true;
+        }
+        if (strpos($low, 'social member') !== false) {
+            return true;
+        }
+        if (preg_match('/\bguest\b/', $low) === 1 && strpos($low, 'non-guest') === false && strpos($low, 'non guest') === false) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

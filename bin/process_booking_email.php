@@ -97,6 +97,7 @@ require_once $root . '/src/EmailNormalizer.php';
 require_once $root . '/src/BookingParser.php';
 require_once $root . '/src/BookingFormatter.php';
 require_once $root . '/src/LogWriter.php';
+require_once $root . '/src/LogTimestamp.php';
 
 $args = array_slice($argv, 1);
 $logPath = null;
@@ -141,7 +142,7 @@ if (isset($positional[0]) && $positional[0] !== '-') {
 $envelope = EmlBodyExtractor::extractEnvelope($raw);
 $body = EmlBodyExtractor::extractBodyForParser($raw);
 $event = RawEmailEnvelope::enrichParsedEvent(BookingParser::parse($body), $envelope);
-$processedAt = gmdate('Y-m-d\TH:i:s\Z');
+$processedAt = LogTimestamp::now();
 $activityLine = BookingFormatter::formatActivityLine($event, $processedAt);
 $digestLine = BookingFormatter::formatDigestLine($event);
 

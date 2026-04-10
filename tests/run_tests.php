@@ -10,7 +10,10 @@ require_once $root . '/src/BookingParser.php';
 require_once $root . '/src/BookingFormatter.php';
 require_once $root . '/src/LogWriter.php';
 
-$processedAt = '2026-04-10T08:42:11Z';
+// Fixed instant for stable assertions → Eastern display (April = EDT).
+$processedAt = (new DateTimeImmutable('2026-04-10 08:42:11', new DateTimeZone('UTC')))
+    ->setTimezone(new DateTimeZone('America/New_York'))
+    ->format('m/d/y g:i A');
 
 /**
  * @return array<string, mixed>

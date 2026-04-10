@@ -14,8 +14,9 @@ final class BookingFormatter
 
     /**
      * @param array<string, mixed> $event from BookingParser::parse
+     * @param string $processedAtStamp e.g. mm/dd/yy 12-hour time (Eastern), from LogTimestamp::now()
      */
-    public static function formatActivityLine(array $event, string $processedAtIso): string
+    public static function formatActivityLine(array $event, string $processedAtStamp): string
     {
         $type = $event['event_type'] ?? 'UNKNOWN';
         if ($type === 'UNKNOWN' && !empty($event['unknown_inbound_external'])) {
@@ -24,7 +25,7 @@ final class BookingFormatter
 
             return sprintf(
                 '%s | UNKNOWN | from=%s | subject=%s',
-                $processedAtIso,
+                $processedAtStamp,
                 $from !== '' ? $from : '-',
                 $subj !== '' ? $subj : '-'
             );
@@ -37,7 +38,7 @@ final class BookingFormatter
 
         $base = sprintf(
             '%s | %s | %s | %s -> %s',
-            $processedAtIso,
+            $processedAtStamp,
             $type,
             $contact,
             $cin,
