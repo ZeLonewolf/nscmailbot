@@ -1,0 +1,95 @@
+Return-Path: <bookings@newportskiclub.org>
+Delivered-To: bookings@newportskiclub.org
+Received: from just2057.justhost.com
+	by just2057.justhost.com with LMTP
+	id uKztFrC+m2nbKQ4AtSCplA
+	(envelope-from <bookings@newportskiclub.org>)
+	for <bookings@newportskiclub.org>; Sun, 22 Feb 2026 19:42:56 -0700
+Return-path: <bookings@newportskiclub.org>
+Envelope-to: bookings@newportskiclub.org
+Delivery-date: Sun, 22 Feb 2026 19:42:56 -0700
+Received: from aws05.cbdweb.net ([13.210.162.27]:57498)
+	by just2057.justhost.com with esmtps  (TLS1.3) tls TLS_AES_256_GCM_SHA384
+	(Exim 4.98.2)
+	(envelope-from <bookings@newportskiclub.org>)
+	id 1vuLuS-00000003vhl-0eSe
+	for bookings@newportskiclub.org;
+	Sun, 22 Feb 2026 19:42:56 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=newportskiclub.org;
+	s=cbdweb; t=1771814564;
+	bh=Px/g2ntNhCzJ0at5LZ7JRMNrzgA+x2tR7f6Qqiw7RNY=;
+	h=From:To:Subject:Reply-To:Date:From;
+	b=zaXprKBcZujGNDCb41kKVYfjy+0/zB/xfOIZ/GtlMfev6+zgykMagS//8zaTkDU6e
+	 l0m+pkAY2FVzDP601VQ8K8X33+400ouFWlhBn+cSnxdVYnYt/VM7fKTFXHlHLfUktu
+	 pqaWoV0bXWwcR9Y3ZYHxv5/vrP/cXGVPw6iHmbqT+a8eUjCQFP0pxKjhvuo0YeA5Iy
+	 Juzt8gT1FvzNxxbaB/pgFfDLFCBcwFTye3V46FaqadO48i7J5UZ1+cNgs4XiGrWfDJ
+	 z571B6E7knjvNc7+fB2/0HTGN9X2uCakred1WusrNGRaPO9S4fNcQrindU7Eo08u1A
+	 B+HzSd7mwASAw==
+Received: from [127.0.0.1] (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	by aws05.cbdweb.net (Postfix) with ESMTPS id 38D6B40FF0
+	for <bookings@newportskiclub.org>; Mon, 23 Feb 2026 13:42:44 +1100 (AEDT)
+From: Brian Sperlongano via CBDWeb <bookings@newportskiclub.org>
+To: bookings@newportskiclub.org
+Subject: Cancelled Booking from 3/6/2026 to 3/7/2026
+Reply-To: zelonewolf@gmail.com
+Message-ID: <a3b011d5ca6467bf562819bf084c7b1a@newportskiclub.org>
+MIME-Version: 1.0
+Date: Sun, 22 Feb 2026 21:42:44 -0500
+Content-Type: multipart/alternative; boundary=y-DqCslT
+
+--y-DqCslT
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<p>To the Booking Officer,<br><br>A booking at Newport Ski Club has been
+=
+CANCELLED in the booking database.<br><br>Status of the booking is
+CANCEL=
+LED.<br><br><br>Booking Reference: NP008156<br>Contact Name: Brian
+Sperlo=
+ngano<br>Check-In: Friday March 6th 2026 @ 11:30 <br>Check-Out:
+Sunday Ma=
+rch 8th 2026 @ 11:00 or when chores are done<br>Bunk
+Details=09Name=09Cal=
+culated cost
+Geronimo - Bunk 20 (Top) - Men's Side=09Sperlongano, Brian=
+=09(Active Member or
+Member Child (Age 12+))=09$52.00
+Food Reservations=
+
+1xSaturday Dinner Meal Adults  ($12 Per Person, Age 12+ Only)=09$12.00=
+
+<br><br>Access details
+here:<br>https://bookings.newportskiclub.org/ap=
+p/admin/bookings?booking_display_id=3DNP008156&tab=3D2<br><br>Guest
+comme=
+nts:<br></p>
+--y-DqCslT
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<style> table.statement{border:0; width:1000px;} table.statement th{font-we=
+ight: bold; border:1px solid rgb(0, 0, 0); padding:1px 5px;} table.statemen=
+t td{white-space:nowrap; border:1px solid rgb(0, 0, 0); padding:1px 5px;} .=
+debit{color: #FF0000;} .credit{color: #00FF00;}</style><p>To the Booking Of=
+ficer,<br><br>A booking at Newport Ski Club has been CANCELLED in the booki=
+ng database.<br><br>Status of the booking is CANCELLED.<br><br><br>Booking =
+Reference: NP008156<br>Contact Name: Brian Sperlongano<br>Check-In: Friday =
+March 6th 2026 @ 11:30 <br>Check-Out: Sunday March 8th 2026 @ 11:00 or when=
+ chores are done<br><table><tr><th style=3D'text-align: left'>Bunk Details<=
+/th><th style=3D'text-align: left'>Name</th><th style=3D'text-align: left'>=
+Tariff</th><th style=3D'text-align: right'>Calculated<br/>cost</th></tr><tr=
+><td style=3D'text-align: left'>Geronimo - Bunk 20 (Top) - Men's Side</td><=
+td style=3D'text-align: left'>Sperlongano, Brian</td><td style=3D'text-alig=
+n: left'>(Active Member or Member Child (Age 12+))</td><td style=3D'text-al=
+ign: right'>$52.00</td></tr><tr><td colspan=3D'4' style=3D'text-align: left=
+'><b>Food Reservations</b></td></tr><tr><td colspan=3D'3' style=3D'text-ali=
+gn: left'>1 x Saturday Dinner Meal Adults  ($12 Per Person, Age 12+ Only)</=
+td><td style=3D'text-align: right'>$12.00</td></tr></table><br><br>Access d=
+etails here:<br>https://bookings.newportskiclub.org/app/admin/bookings?book=
+ing_display_id=3DNP008156&tab=3D2<br><br>Guest comments:<br></p>
+--y-DqCslT--
+

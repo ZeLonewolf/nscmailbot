@@ -1,0 +1,64 @@
+Return-Path: <bookings@newportskiclub.org>
+Delivered-To: bookings@newportskiclub.org
+Received: from just2057.justhost.com
+	by just2057.justhost.com with LMTP
+	id gASvHC1fp2k+IAIAtSCplA
+	(envelope-from <bookings@newportskiclub.org>)
+	for <bookings@newportskiclub.org>; Tue, 03 Mar 2026 15:22:37 -0700
+Return-path: <bookings@newportskiclub.org>
+Envelope-to: bookings@newportskiclub.org
+Delivery-date: Tue, 03 Mar 2026 15:22:37 -0700
+Received: from aws05.cbdweb.net ([13.210.162.27]:46378)
+	by just2057.justhost.com with esmtps  (TLS1.3) tls TLS_AES_256_GCM_SHA384
+	(Exim 4.98.2)
+	(envelope-from <bookings@newportskiclub.org>)
+	id 1vxY8T-00000000cdq-1AuD
+	for bookings@newportskiclub.org;
+	Tue, 03 Mar 2026 15:22:37 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=newportskiclub.org;
+	s=cbdweb; t=1772576544;
+	bh=3u63UY0iFtJ6SFyZ62XNPo9mZwHFucP07O7BeDCON9U=;
+	h=From:To:Subject:Reply-To:Date:From;
+	b=b2KtHHPp3WxMajGpVgW3Gw7foIUdc55+1JE9TnK2B1Kvy6oxjLRoBAh0kDFM8pK3Q
+	 Q0wxBGLla9ZtIN6NsyfktkdEuluN5086GhdxM2t3NLQ8x2QyZnAUAiuI/2QPcjOJsQ
+	 apErcPELGQMgWrtQnnZ8UhxqbmFYxXrRNkpFIdBRsQ9WUjGHom05VjUkXs4RanBDS6
+	 Pe7p6CwnyXts+NwTeTKcXxgYilI4BkQacQX67+d18w0Qv0OTk+0+uLu7s9g2cJSstg
+	 dInyX9pODUPqyurf6d/SnIsqHH7hYE4jhEWEWL6goHyi1EgjtUfEOQ44mTK9rsFo0i
+	 X1v6XRtr4FG6w==
+Received: from [127.0.0.1] (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	by aws05.cbdweb.net (Postfix) with ESMTPS id 8C481410E9
+	for <bookings@newportskiclub.org>; Wed,  4 Mar 2026 09:22:24 +1100 (AEDT)
+From: Brian Sperlongano via CBDWeb <bookings@newportskiclub.org>
+To: bookings@newportskiclub.org
+Subject: Booking NP008344 from 3/13/2026 to 3/15/2026 was edited, status:
+ TENTATIVE,
+Reply-To: zelonewolf@gmail.com
+Message-ID: <4bc36881954d29fbe4f6fc71cb26ffb4@newportskiclub.org>
+MIME-Version: 1.0
+Date: Tue, 03 Mar 2026 17:22:24 -0500
+Content-Type: multipart/alternative; boundary=L_Bni4GB
+
+--L_Bni4GB
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Booking NP008344 was edited by Brian Sperlongano
+Check it:
+https://book=
+ings.newportskiclub.org/app/admin/bookings?booking_display_id=3DNP008344&ta=
+b=3D2
+--L_Bni4GB
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<style> table.statement{border:0; width:1000px;} table.statement th{font-we=
+ight: bold; border:1px solid rgb(0, 0, 0); padding:1px 5px;} table.statemen=
+t td{white-space:nowrap; border:1px solid rgb(0, 0, 0); padding:1px 5px;} .=
+debit{color: #FF0000;} .credit{color: #00FF00;}</style><p>Booking NP008344 =
+was edited by Brian Sperlongano</p><p>Check it: https://bookings.newportski=
+club.org/app/admin/bookings?booking_display_id=3DNP008344&tab=3D2</p>
+--L_Bni4GB--
+

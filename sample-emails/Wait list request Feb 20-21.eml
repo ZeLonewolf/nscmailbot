@@ -1,0 +1,112 @@
+Return-Path: <zelonewolf@gmail.com>
+Delivered-To: bookings@newportskiclub.org
+Received: from just2057.justhost.com
+	by just2057.justhost.com with LMTP
+	id WxXkOp8LkWl8PQEAtSCplA
+	(envelope-from <zelonewolf@gmail.com>)
+	for <bookings@newportskiclub.org>; Sat, 14 Feb 2026 16:56:15 -0700
+Return-path: <zelonewolf@gmail.com>
+Envelope-to: bookings@newportskiclub.org
+Delivery-date: Sat, 14 Feb 2026 16:56:15 -0700
+Received: from mail-qt1-f179.google.com ([209.85.160.179]:52683)
+	by just2057.justhost.com with esmtps  (TLS1.3) tls TLS_AES_128_GCM_SHA256
+	(Exim 4.98.2)
+	(envelope-from <zelonewolf@gmail.com>)
+	id 1vrPUl-00000000L3J-3Zfh
+	for bookings@newportskiclub.org;
+	Sat, 14 Feb 2026 16:56:15 -0700
+Received: by mail-qt1-f179.google.com with SMTP id d75a77b69052e-506362ac5f7so20384921cf.1
+        for <bookings@newportskiclub.org>; Sat, 14 Feb 2026 15:56:10 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1771113364; cv=none;
+        d=google.com; s=arc-20240605;
+        b=kY/C5l7n7ovC8NVO1tGf5vA/TTlivT/Xd9B6/QVSV2s9fRqFVoMKIT0t5SLzhcfg2y
+         251ri+JBFX/V5do08lHpBBa8jcMKrp8BMZqoOe8wsYM+TctON20PHw25BClrCIyPcKAn
+         R9mFh7Gdz0ouk10pWQNKQmb4oai3lnQkCxLU2r86AIaYV4sdQietWROrnXdp17v9G7fX
+         OQEZwKhpCgCvyIFvpQ3+tQmeSkxy9In6M0yxBlBjTZqnZfQhvnjxN9vLikzPd/Tvfy5f
+         VSq2N78J4GWYGyHLaZwa8f0bV4ne16CVZZjCAKU8HuPU6oplRdm6kOcwUButg+iqSQ8N
+         THWg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=to:subject:message-id:date:from:mime-version:dkim-signature;
+        bh=nNxXAoVwqXk3I7uiRWHZNB5PNjtii76RkUatBzJtt6U=;
+        fh=ev2keWXOhacR51B+SCFBmwmnyU+/yrMVQXY/v6QSGZM=;
+        b=SG9JIvbfbRitC21PvX8jElg3/dW1zF/asgZ0nonZFL7CsFqfjaY2jtkjUUYvjxJQHN
+         DC20Qccjnywvjup5uiFR1sKEwYU5267gz/A6oxPW7Yq0/nbJ0qTIoR+XVVd1h2aOJdzj
+         yHWc8cLJGvMo/AJL3JSeQLr+oseYVyAkCKjNeQDq03hydsguXXzjeY1kDo8cusaM5toW
+         VVXl6hmrEfmAP3sadgUBPfgfmjH/sJJG47sVTV5HgxwZuPKvi8Iu6ukKlH9lzBVyJqLo
+         CyI8RHjNn80giT8Lz4ve2EfM0pIaQ8HW6ubrr6RL/0xWj0Y2Xwd1F6RN18Dm5ZlzasXC
+         ZqSg==;
+        darn=newportskiclub.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1771113364; x=1771718164; darn=newportskiclub.org;
+        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=nNxXAoVwqXk3I7uiRWHZNB5PNjtii76RkUatBzJtt6U=;
+        b=lb/875BgaEru2X1eQcFxz/pO1ChKYZ3tzyjuPRtrJZr8tOkqj+oOswVRHE9r41y3Dt
+         FWl2yxJczdW82EOyyusMzuEhcuqSwPBIqt3T0TRaatnB5q56pr/X5lMW2woGAqEQ1tr3
+         gV7qd73shDFBDrYOVJfDrgjZEQhOo1Ht1pLc6WU3iKwQVhlcw//Z0o7+ci9aRNgtRncn
+         DvDCjdaVDK5OaUKagkcPK1Pz2Z/JZOqjWIMtBtjbY/uDrptWOSAB+BY4pevKDVvBTTmd
+         BPhnnGBldAfQjjyxFOM4n3AOtaPdq1a7Ce46KJBkSoZgBEJHtpGwGgVX9ZcUx81/Vn3U
+         /JPQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1771113364; x=1771718164;
+        h=to:subject:message-id:date:from:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=nNxXAoVwqXk3I7uiRWHZNB5PNjtii76RkUatBzJtt6U=;
+        b=nDuuaUkcGeQnQ2uDUQ6h0LbJA7zldiiBbqPHXOXE1c+//ZFH+51BhpzzQuwe2yynN9
+         5vHSg8EDusaDrLVWgwnv9dWlBrERJYp/w13OwP9LfVDQmXjePfvGPSffsInWSdHgmgJM
+         C+iHbwPS6FHsKB5jKy0kC49c14g+KPJesf4Ud0l+B6skZejjIoJAf9qjGtVQkHu1sztQ
+         8HYF2z2U84uH4IIBVpNDTiqs4WlGOmg6SCMccMNP79ahzegUsFyhCaL037KKHEtwgveN
+         Kg9yRrUAdMWQ5uYsgB+ybPrmdiMVSzebmmuqNCgz5j+BYYbK4U2fX5ocsEgX5adcP8dx
+         fJDQ==
+X-Gm-Message-State: AOJu0YzJB4xG3YlLHlrScCaHee8xT7rjRz6SENTsvDWZyiS0HQygiciI
+	pXya5PHNZ+dDNzDkgdnIE6WaZN1cDjZnkmJ9qKqub2pSVLGJACPPEDBi7/lt83+K+4adcZa8QOu
+	Tfmtwf6Xrw4nmXz8nm8XWfAsHRjPjULYGKQ==
+X-Gm-Gg: AZuq6aL/C4ekVYhYbSAftzBI2V4EKkxJet4SBBfjElhIRMWXhHd2QrRN6l++d3Brxnz
+	EquCsX/xZ9K9gz6J6imliEX54A0FYpRjkWh/Z7m42ho8wa0fMHtZus0pvc4/InaxNBf5pWjX4bK
+	m1sW51eRn+Dv9FTQvq795KmPnghHN3g0crEBfl71R8MmfwtWZGGlu5/sWTur6TZ7d0ys3Y+o5gX
+	5Jj/H8ACAOhfBMqGX/9INr2KR/9VYtA7ocqfXfX4VodC6DMZvWerBG3xtiDWdGMLQE42XEbgn5S
+	hyJc0t2NCtWj9zCgOvbTPrRPFli+iXq7kuvmv1mwAK55ZqE4iA==
+X-Received: by 2002:ac8:58d2:0:b0:4ee:2154:8032 with SMTP id
+ d75a77b69052e-506b3f7e0a1mr54286191cf.6.1771113364281; Sat, 14 Feb 2026
+ 15:56:04 -0800 (PST)
+MIME-Version: 1.0
+From: "Brian M. Sperlongano" <zelonewolf@gmail.com>
+Date: Sat, 14 Feb 2026 18:55:50 -0500
+X-Gm-Features: AZwV_Qj2jA_K4z43dZX5grL_P235uog7cxVlz3-tvbAcGhNUTibVEyI7r4dYe-8
+Message-ID: <CAMrfQx2SKXMB+DDBM3vtMJ9Ec9tTENZoAUVe_yCNvV+owsHnyA@mail.gmail.com>
+Subject: Wait list request Feb 20-21
+To: bookings@newportskiclub.org
+Content-Type: multipart/alternative; boundary="000000000000ef5e75064ad17601"
+
+--000000000000ef5e75064ad17601
+Content-Type: text/plain; charset="UTF-8"
+
+Hi Amy,
+
+Please add the following guest to the wait list for the Feb 20-21 weekend
+(Friday & Saturday stay):
+
+John Meroth (male) age 61
+
+I previously emailed about adding myself to the waitlist, but I've since
+booked a bunk that opened up for myself and one other guest, so you can
+disregard the prior request.
+
+Thanks,
+Brian Sperlongano
+
+--000000000000ef5e75064ad17601
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"auto">Hi Amy,<div dir=3D"auto"><br></div><div dir=3D"auto">Plea=
+se add the following guest to the wait list for the Feb 20-21 weekend (Frid=
+ay &amp; Saturday stay):</div><div dir=3D"auto"><br></div><div dir=3D"auto"=
+>John Meroth (male) age 61</div><div dir=3D"auto"><br></div><div dir=3D"aut=
+o">I previously emailed about adding myself to the waitlist, but I&#39;ve s=
+ince booked a bunk that opened up for myself and one other guest, so you ca=
+n disregard the prior request.</div><div dir=3D"auto"><br></div><div dir=3D=
+"auto">Thanks,=C2=A0</div><div dir=3D"auto">Brian Sperlongano</div></div>
+
+--000000000000ef5e75064ad17601--

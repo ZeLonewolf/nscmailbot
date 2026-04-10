@@ -1,0 +1,108 @@
+Return-Path: <bookings@newportskiclub.org>
+Delivered-To: bookings@newportskiclub.org
+Received: from just2057.justhost.com
+	by just2057.justhost.com with LMTP
+	id oC4lNKvMnGkESQwAtSCplA
+	(envelope-from <bookings@newportskiclub.org>)
+	for <bookings@newportskiclub.org>; Mon, 23 Feb 2026 14:54:51 -0700
+Return-path: <bookings@newportskiclub.org>
+Envelope-to: bookings@newportskiclub.org
+Delivery-date: Mon, 23 Feb 2026 14:54:51 -0700
+Received: from aws05.cbdweb.net ([13.210.162.27]:58430)
+	by just2057.justhost.com with esmtps  (TLS1.3) tls TLS_AES_256_GCM_SHA384
+	(Exim 4.98.2)
+	(envelope-from <bookings@newportskiclub.org>)
+	id 1vudtD-00000003kgR-2jfX
+	for bookings@newportskiclub.org;
+	Mon, 23 Feb 2026 14:54:51 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=newportskiclub.org;
+	s=cbdweb; t=1771883679;
+	bh=/i6VO+arbRwJ3NqUDSFR/AqVlXAKfI2pHeAVCtw1osA=;
+	h=From:To:Subject:Reply-To:Date:From;
+	b=OOrj22AqyqETKvjzpE1ijMUnrKJeCpSrX3Eh0lflkXt6qJQAAOr9xhWqV35VRo4Yv
+	 iaKVRKm/Gp88qmUVAZy89dShcB3H4nyTQBgmwFW/FxKKQwBL21tkd6QQ76Ya9htgV5
+	 hFA0nOLf3evJHn9H7jUpW3pd0XV+16ki2s6T5xKhqnhwgDKOVmCr4mFXuF+0hLHzE8
+	 otKXLZbEssT6GQd3TBnUdGmMIWz3QkXDRUTTdr5+ax3Q8AnfGiRAaDQ3Q25LIfN+Xi
+	 bhxfPXdEGkktTW69USgsjUh08TZ5rj9diDhhJAB79+hjx79MwLthOLK2IIk3mk5rgE
+	 5h96n6obMil6g==
+Received: from [127.0.0.1] (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	by aws05.cbdweb.net (Postfix) with ESMTPS id 9E8F240178
+	for <bookings@newportskiclub.org>; Tue, 24 Feb 2026 08:54:39 +1100 (AEDT)
+From: Brian Sperlongano via CBDWeb <bookings@newportskiclub.org>
+To: bookings@newportskiclub.org
+Subject: Notification of tentative booking from 2/23/2026 to 2/23/2026
+Reply-To: zelonewolf@gmail.com
+Message-ID: <b2086a59e4d8c2a3a487b4330c2d42d4@newportskiclub.org>
+MIME-Version: 1.0
+Date: Mon, 23 Feb 2026 16:54:39 -0500
+Content-Type: multipart/alternative; boundary=kjHaKP47
+
+--kjHaKP47
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+To the Booking Officer,<br/><br/>A TENTATIVE booking at Newport Ski Club
+=
+has been recorded in the booking database.<br/><br/>You can access the
+de=
+tails
+here:<br/>https://bookings.newportskiclub.org/app/admin/bookings?bo=
+oking_display_id=3DNP008171&tab=3D2<br/><br/>Booking
+Reference: NP008171<=
+br/>Contact Name: Brian Sperlongano<br/>Check-In:
+Monday February 23rd 20=
+26 @ 11:30 <br/>Check-Out: Tuesday February 24th
+2026 @ 11:00 or when cho=
+res are done<br/>Bunk Details=09Name=09Calculated cost
+Tomahawk - Bunk 17=
+ (Bottom) - Men's Side=09Meroth, John=09(Guest or Social
+Member (Age 12+)=
+ )=09$32.00
+Geronimo - Bunk 22 (Top) - Men's Side=09Sperlongano, Brian=09=
+(Active Member or
+Member Child (Age 12+))=09$22.00
+Food Reservations
+=
+2xWeekday Daily Contribution=09$2.00
+<br/><br/>=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D<br/>A=
+mount Owing: $
+1,598.00<br/>=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D<br/><br/>Customer
+Commen=
+t:<br/>
+--kjHaKP47
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<style> table.statement{border:0; width:1000px;} table.statement th{font-we=
+ight: bold; border:1px solid rgb(0, 0, 0); padding:1px 5px;} table.statemen=
+t td{white-space:nowrap; border:1px solid rgb(0, 0, 0); padding:1px 5px;} .=
+debit{color: #FF0000;} .credit{color: #00FF00;}</style>To the Booking Offic=
+er,<br/><br/>A TENTATIVE booking at Newport Ski Club has been recorded in t=
+he booking database.<br/><br/>You can access the details here:<br/>https://=
+bookings.newportskiclub.org/app/admin/bookings?booking_display_id=3DNP00817=
+1&tab=3D2<br/><br/>Booking Reference: NP008171<br/>Contact Name: Brian Sper=
+longano<br/>Check-In: Monday February 23rd 2026 @ 11:30 <br/>Check-Out: Tue=
+sday February 24th 2026 @ 11:00 or when chores are done<br/><table><tr><th =
+style=3D'text-align: left'>Bunk Details</th><th style=3D'text-align: left'>=
+Name</th><th style=3D'text-align: left'>Tariff</th><th style=3D'text-align:=
+ right'>Calculated<br/>cost</th></tr><tr><td style=3D'text-align: left'>Tom=
+ahawk - Bunk 17 (Bottom) - Men's Side</td><td style=3D'text-align: left'>Me=
+roth, John</td><td style=3D'text-align: left'>(Guest or Social Member (Age =
+12+) )</td><td style=3D'text-align: right'>$32.00</td></tr><tr><td style=3D=
+'text-align: left'>Geronimo - Bunk 22 (Top) - Men's Side</td><td style=3D't=
+ext-align: left'>Sperlongano, Brian</td><td style=3D'text-align: left'>(Act=
+ive Member or Member Child (Age 12+))</td><td style=3D'text-align: right'>$=
+22.00</td></tr><tr><td colspan=3D'4' style=3D'text-align: left'><b>Food Res=
+ervations</b></td></tr><tr><td colspan=3D'3' style=3D'text-align: left'>2 x=
+ Weekday Daily Contribution</td><td style=3D'text-align: right'>$2.00</td><=
+/tr></table><br/><br/>=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D<br/>Amount Owing: $ 1,598.00<br/=
+>=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D<br/><br/>Customer Comment:<br/>
+--kjHaKP47--
+
