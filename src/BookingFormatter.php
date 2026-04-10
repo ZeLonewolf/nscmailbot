@@ -7,6 +7,11 @@ declare(strict_types=1);
  */
 final class BookingFormatter
 {
+    private static function utc(): DateTimeZone
+    {
+        return new DateTimeZone('UTC');
+    }
+
     /**
      * @param array<string, mixed> $event from BookingParser::parse
      */
@@ -24,25 +29,25 @@ final class BookingFormatter
                 $subj !== '' ? $subj : '-'
             );
         }
-        $ref = self::dashIfEmpty($event['booking_reference'] ?? null);
         $contact = self::dashIfEmpty($event['contact_name'] ?? null);
-        $cin = self::formatDateTimeSlot($event['check_in'] ?? null);
-        $cout = self::formatDateTimeSlot($event['check_out'] ?? null);
-        $counts = $event['counts'] ?? ['members' => 0, 'children' => 0, 'guests' => 0, 'unknown' => 0];
+        $cin = self::formatUsDateTime($event['check_in'] ?? null);
+        $cout = self::formatUsDateTime($event['check_out'] ?? null);
+        $counts = $event['counts'] ?? [];
+        $occupancy = self::occupancyPlainList($counts);
 
-        return sprintf(
-            '%s | %s | %s | %s | %s -> %s | members=%d children=%d guests=%d unknown=%d',
+        $base = sprintf(
+            '%s | %s | %s | %s -> %s',
             $processedAtIso,
             $type,
-            $ref,
             $contact,
             $cin,
-            $cout,
-            (int) ($counts['members'] ?? 0),
-            (int) ($counts['children'] ?? 0),
-            (int) ($counts['guests'] ?? 0),
-            (int) ($counts['unknown'] ?? 0)
+            $cout
         );
+        if ($occupancy === '') {
+            return $base;
+        }
+
+        return $base . ' | ' . $occupancy;
     }
 
     /**
@@ -63,19 +68,29 @@ final class BookingFormatter
 
             return "UNKNOWN: {$from}, {$subj}";
         }
-        $ref = (string) ($event['booking_reference'] ?? '');
         $contact = (string) ($event['contact_name'] ?? '');
-        if ($ref === '') {
-            $ref = '-';
-        }
         if ($contact === '') {
             $contact = '-';
         }
 
-        $range = self::shortDateRange($event['check_in'] ?? null, $event['check_out'] ?? null);
-        $summary = self::countSummary($event['counts'] ?? []);
+        $stay = self::digestStaySummary($event['check_in'] ?? null, $event['check_out'] ?? null);
+        $summary = self::digestOccupancySummary($event['counts'] ?? []);
 
-        return sprintf('%s: %s %s, %s, %s', $type, $ref, $contact, $range, $summary);
+        return sprintf('%s: %s, %s, %s', $type, $contact, $stay, $summary);
+    }
+
+    /** @param array<string, int> $counts */
+    private static function countOther(array $counts): int
+    {
+        if (isset($counts['other'])) {
+            return (int) $counts['other'];
+        }
+        // Legacy parsed events
+        if (isset($counts['unknown'])) {
+            return (int) $counts['unknown'];
+        }
+
+        return 0;
     }
 
     /** Single-line safe for append-only logs (no pipes / newlines). */
@@ -96,32 +111,45 @@ final class BookingFormatter
         return $s === '' ? '-' : $s;
     }
 
-    private static function formatDateTimeSlot(mixed $ymdHi): string
+    /** US style M/d/y hh:mm am/pm from internal Y-m-d H:i. */
+    private static function formatUsDateTime(mixed $ymdHi): string
     {
-        if ($ymdHi === null || $ymdHi === '') {
+        $dt = self::parseYmdHi($ymdHi);
+        if ($dt === null) {
             return '-';
         }
-        $s = trim((string) $ymdHi);
-        return $s === '' ? '-' : $s;
+
+        return $dt->format('n/j/Y g:i A');
     }
 
-    /**
-     * Examples: Mar 30-Mar 31, Apr 3-Apr 5
-     */
-    private static function shortDateRange(mixed $checkIn, mixed $checkOut): string
+    /** e.g. 3/6 (2 nights) from check-in/out dates (calendar-night count). */
+    private static function digestStaySummary(mixed $checkIn, mixed $checkOut): string
     {
         $a = self::parseYmdHi($checkIn);
         $b = self::parseYmdHi($checkOut);
-        if ($a === null && $b === null) {
+        if ($a === null || $b === null) {
             return '-';
         }
-        if ($a === null) {
-            return self::fmtMd($b);
+        $nights = self::nightCount($a, $b);
+        if ($nights === null) {
+            return '-';
         }
-        if ($b === null) {
-            return self::fmtMd($a);
+        $startUs = $a->format('n/j');
+        $nLabel = $nights === 1 ? '1 night' : "{$nights} nights";
+
+        return "{$startUs} ({$nLabel})";
+    }
+
+    private static function nightCount(DateTimeImmutable $checkIn, DateTimeImmutable $checkOut): ?int
+    {
+        $d0 = $checkIn->setTime(0, 0, 0);
+        $d1 = $checkOut->setTime(0, 0, 0);
+        if ($d1 < $d0) {
+            return null;
         }
-        return self::fmtMd($a) . '-' . self::fmtMd($b);
+        $interval = $d0->diff($d1);
+
+        return (int) $interval->format('%a');
     }
 
     private static function parseYmdHi(mixed $v): ?DateTimeImmutable
@@ -130,34 +158,26 @@ final class BookingFormatter
             return null;
         }
         $s = trim((string) $v);
-        $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i', $s, new DateTimeZone('UTC'));
+        $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i', $s, self::utc());
         if ($dt instanceof DateTimeImmutable) {
             return $dt;
         }
-        $dt = DateTimeImmutable::createFromFormat('Y-m-d', $s, new DateTimeZone('UTC'));
+        $dt = DateTimeImmutable::createFromFormat('Y-m-d', $s, self::utc());
         return $dt instanceof DateTimeImmutable ? $dt : null;
     }
 
-    private static function fmtMd(?DateTimeImmutable $dt): string
-    {
-        if ($dt === null) {
-            return '-';
-        }
-        return $dt->format('M j');
-    }
-
     /**
+     * Non-zero categories only, e.g. "1 member, 2 guests".
+     *
      * @param array<string, int> $counts
+     * @return list<string>
      */
-    private static function countSummary(array $counts): string
+    private static function occupancyNonZeroParts(array $counts): array
     {
         $m = (int) ($counts['members'] ?? 0);
         $c = (int) ($counts['children'] ?? 0);
         $g = (int) ($counts['guests'] ?? 0);
-        $u = (int) ($counts['unknown'] ?? 0);
-        if ($m === 0 && $c === 0 && $g === 0 && $u === 0) {
-            return '0 occupants parsed';
-        }
+        $o = self::countOther($counts);
         $parts = [];
         if ($m > 0) {
             $parts[] = $m === 1 ? '1 member' : "{$m} members";
@@ -168,9 +188,29 @@ final class BookingFormatter
         if ($g > 0) {
             $parts[] = $g === 1 ? '1 guest' : "{$g} guests";
         }
-        if ($u > 0) {
-            $parts[] = $u === 1 ? '1 unknown' : "{$u} unknown";
+        if ($o > 0) {
+            $parts[] = $o === 1 ? '1 other' : "{$o} other";
         }
+
+        return $parts;
+    }
+
+    /** Activity log: plain list; omit entire tail when all counts are zero. */
+    private static function occupancyPlainList(array $counts): string
+    {
+        $parts = self::occupancyNonZeroParts($counts);
+
+        return $parts === [] ? '' : implode(', ', $parts);
+    }
+
+    /** Digest: same wording, but explain when nothing was counted. */
+    private static function digestOccupancySummary(array $counts): string
+    {
+        $parts = self::occupancyNonZeroParts($counts);
+        if ($parts === []) {
+            return '0 occupants parsed';
+        }
+
         return implode(', ', $parts);
     }
 }

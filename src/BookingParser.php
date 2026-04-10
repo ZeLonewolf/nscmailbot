@@ -86,7 +86,7 @@ final class BookingParser
             'check_out' => null,
             'booking_url' => $url !== '' ? $url : null,
             'bunks' => [],
-            'counts' => ['members' => 0, 'children' => 0, 'guests' => 0, 'unknown' => 0],
+            'counts' => ['members' => 0, 'children' => 0, 'guests' => 0, 'other' => 0],
             'parsing_notes' => $notes,
             'raw_excerpt' => $excerpt,
         ];
@@ -94,16 +94,16 @@ final class BookingParser
 
     /**
      * @param list<string> $notes
-     * @return 'BOOKED'|'TENTATIVE'|'CANCELLED'|'UNKNOWN'
+     * @return 'BOOKED'|'CANCELLED'|'UNKNOWN'
      */
     private static function detectEventType(string $text, array &$notes): string
     {
-        // Prefer explicit phrases from known templates.
+        // Confirmed and tentative NORA notices both report as BOOKED in logs and digests.
         if (preg_match('/\bCONFIRMED\s+booking\b/i', $text) === 1) {
             return 'BOOKED';
         }
         if (preg_match('/\bTENTATIVE\s+booking\b/i', $text) === 1) {
-            return 'TENTATIVE';
+            return 'BOOKED';
         }
         if (preg_match('/\bCANCELLED\b/i', $text) === 1 || preg_match('/\bCANCELED\b/i', $text) === 1) {
             return 'CANCELLED';
@@ -263,7 +263,7 @@ final class BookingParser
                 'cost' => $priceLiteral,
                 'per_bunk_start' => null,
                 'per_bunk_end' => null,
-                'classification' => 'unknown',
+                'classification' => 'other',
             ];
         }
 
@@ -335,12 +335,12 @@ final class BookingParser
     }
 
     /**
-     * @return 'member'|'child'|'guest'|'unknown'
+     * @return 'member'|'child'|'guest'|'other'
      */
     private static function classifyCategory(?string $categoryRaw): string
     {
         if ($categoryRaw === null || trim($categoryRaw) === '') {
-            return 'unknown';
+            return 'other';
         }
         $inner = trim($categoryRaw, " ()\t\n\r\0\x0B");
         $low = strtolower($inner);
@@ -363,18 +363,22 @@ final class BookingParser
             return 'member';
         }
 
-        return 'unknown';
+        return 'other';
     }
 
     /**
      * @param list<array<string, mixed>> $bunks
-     * @return array{members:int,children:int,guests:int,unknown:int}
+     * @return array{members:int,children:int,guests:int,other:int}
      */
     private static function aggregateCounts(array $bunks): array
     {
-        $m = $c = $g = $u = 0;
+        $m = $c = $g = $o = 0;
         foreach ($bunks as $row) {
-            switch ($row['classification'] ?? 'unknown') {
+            $cls = $row['classification'] ?? 'other';
+            if ($cls === 'unknown') {
+                $cls = 'other';
+            }
+            switch ($cls) {
                 case 'member':
                     $m++;
                     break;
@@ -385,14 +389,14 @@ final class BookingParser
                     $g++;
                     break;
                 default:
-                    $u++;
+                    $o++;
             }
         }
         return [
             'members' => $m,
             'children' => $c,
             'guests' => $g,
-            'unknown' => $u,
+            'other' => $o,
         ];
     }
 
@@ -425,7 +429,7 @@ final class BookingParser
             'check_out' => null,
             'booking_url' => null,
             'bunks' => [],
-            'counts' => ['members' => 0, 'children' => 0, 'guests' => 0, 'unknown' => 0],
+            'counts' => ['members' => 0, 'children' => 0, 'guests' => 0, 'other' => 0],
             'parsing_notes' => $notes,
             'raw_excerpt' => self::makeExcerpt($normalized),
         ];

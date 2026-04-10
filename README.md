@@ -8,7 +8,7 @@ You do not need a database or extra PHP libraries—only what your web host alre
 
 ## How that works (simple version)
 
-1. **Collect:** When a NORA notification arrives at the booking address, the host can **pipe** the message into a small script. The script reads the email and **adds one line** to a log file (by default under `~/logs/booking_activity.log` when mail is piped in). That line is a short, consistent summary (booking reference, dates, counts, and so on) so many notices are easy to scan.
+1. **Collect:** When a NORA notification arrives at the booking address, the host can **pipe** the message into a small script. The script reads the email and **adds one line** to a log file (by default under `~/logs/booking_activity.log` when mail is piped in). That line is a short summary: **event type, contact name, stay dates in US form, and headcounts**—easy to scan in a digest.
 
 2. **Digest:** A **second script** runs on a **timer** (cron). If the log has anything in it, it **sends that text to the reservationist** as the body of one email—the digest—then **saves the old log** with a date in the filename and begins a fresh log.
 
@@ -135,11 +135,15 @@ That prints a short summary and the same style of line that would be appended wh
 
 ## What ends up in the log
 
-**Typical NORA notifications** get one line per email, roughly:
+**Typical NORA notifications** get one line per email (no booking ID in the line; times are **US `M/d/y` with 12-hour clock**):
 
 ```text
-2026-04-10T08:42:11Z | CANCELLED | NP008156 | Brian Sperlongano | 2026-03-06 11:30 -> 2026-03-08 11:00 | members=1 children=0 guests=0 unknown=0
+2026-04-10T08:42:11Z | CANCELLED | Brian Sperlongano | 3/6/2026 11:30 AM -> 3/8/2026 11:00 AM | 1 member
 ```
+
+Occupancy on that line is plain English (`1 member`, `2 guests`, …); **zero categories are omitted**. If no one was counted, the line ends after the dates (no `members=0`-style fields).
+
+The same booking might also be summarized for people as: `CANCELLED: Brian Sperlongano, 3/6 (2 nights), 1 member`—**start date as `M/d` plus night count**.
 
 **Mail from a real person to the bookings address** that is not a booking template is usually logged more simply:
 
@@ -147,7 +151,7 @@ That prints a short summary and the same style of line that would be appended wh
 2026-04-10T08:42:11Z | UNKNOWN | from="Name" <email@example.com> | subject=Their subject line
 ```
 
-The script recognizes common NORA email types: **confirmed (booked)**, **tentative**, **cancelled**, and short **“booking NP… was edited”** messages. Anything else is **UNKNOWN**.
+The script recognizes common NORA email types: **confirmed** and **tentative** booking notices (both logged as **BOOKED**), **cancelled**, and short **“booking NP… was edited”** messages (**EDITED**). Anything else is **UNKNOWN**.
 
 ---
 

@@ -53,7 +53,7 @@ $emlFiles = [
         'guests' => 0,
     ],
     'Notification of tentative booking from 2 23 2026 to 2 23 2026.eml' => [
-        'event_type' => 'TENTATIVE',
+        'event_type' => 'BOOKED',
         'booking_reference' => 'NP008171',
         'contact_name' => 'Brian Sperlongano',
         'check_in' => '2026-02-23 11:30',
@@ -114,13 +114,31 @@ foreach ($emlFiles as $file => $expect) {
         $expDig = 'UNKNOWN: "Brian M. Sperlongano" <zelonewolf@gmail.com>, Wait list request Feb 20-21';
         assert_eq(BookingFormatter::formatDigestLine($ev), $expDig, "{$label} digest simplified");
     }
+    if ($file === 'Cancelled Booking from 3 6 2026 to 3 7 2026.eml') {
+        $expAct = $processedAt . ' | CANCELLED | Brian Sperlongano | 3/6/2026 11:30 AM -> 3/8/2026 11:00 AM | 1 member';
+        assert_eq(BookingFormatter::formatActivityLine($ev, $processedAt), $expAct, "{$label} activity line");
+        assert_eq(BookingFormatter::formatDigestLine($ev), 'CANCELLED: Brian Sperlongano, 3/6 (2 nights), 1 member', "{$label} digest line");
+    }
+    if ($file === 'Notification of tentative booking from 2 23 2026 to 2 23 2026.eml') {
+        $expAct = $processedAt . ' | BOOKED | Brian Sperlongano | 2/23/2026 11:30 AM -> 2/24/2026 11:00 AM | 1 member, 1 guest';
+        assert_eq(BookingFormatter::formatActivityLine($ev, $processedAt), $expAct, "{$label} activity line");
+        assert_eq(BookingFormatter::formatDigestLine($ev), 'BOOKED: Brian Sperlongano, 2/23 (1 night), 1 member, 1 guest', "{$label} digest line");
+    }
+    if ($file === 'Booking NP008344 from 3 13 2026 to 3 15 2026 was edited, status TENTATIVE,.eml') {
+        assert_eq(
+            BookingFormatter::formatDigestLine($ev),
+            'EDITED: Brian Sperlongano, -, 0 occupants parsed',
+            "{$label} digest line"
+        );
+    }
 }
 
-// UNKNOWN without MIME envelope: keep canonical activity line (counts + dashes).
+// UNKNOWN without MIME envelope: dates + dashes; no occupancy tail when all counts zero.
 $nakedUnknown = RawEmailEnvelope::enrichParsedEvent(BookingParser::parse('not a booking template at all'), null);
 $nakedLine = BookingFormatter::formatActivityLine($nakedUnknown, $processedAt);
 assert_eq(strpos($nakedLine, 'from=') === false, true, 'body-only UNKNOWN must not use from=/subject= line');
-assert_eq(strpos($nakedLine, 'members=') !== false, true, 'body-only UNKNOWN keeps count tail');
+assert_eq(strpos($nakedLine, 'members=') === false, true, 'body-only UNKNOWN has no key=value counts');
+assert_eq($nakedLine, $processedAt . ' | UNKNOWN | - | - -> -', 'body-only UNKNOWN ends at dates when counts all zero');
 
 // UNKNOWN but From is club mailbox: not treated as external inbound.
 $clubUnknown = BookingParser::parse('unrecognized club noise');
@@ -134,7 +152,7 @@ $clubUnknown = RawEmailEnvelope::enrichParsedEvent($clubUnknown, [
 assert_eq($clubUnknown['unknown_inbound_external'] ?? false, false, 'club From blocks simplified UNKNOWN log');
 $clubLine = BookingFormatter::formatActivityLine($clubUnknown, $processedAt);
 assert_eq(strpos($clubLine, 'from=') === false, true, 'club UNKNOWN uses full activity line');
-assert_eq(strpos($clubLine, 'members=') !== false, true, 'club UNKNOWN has counts');
+assert_eq($clubLine, $processedAt . ' | UNKNOWN | - | - -> -', 'club UNKNOWN no occupancy tail when zero');
 
 echo "All tests passed.\n";
 exit(0);
