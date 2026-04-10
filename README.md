@@ -1,152 +1,183 @@
 # nscmailbot
 
-Small PHP utilities for **Newport Ski Club** booking notification emails on Bluehost/cPanel: parse one raw message into a structured event, append a canonical activity line to a log, and (separately) email the log to the reservationist and roll it over.
+**Purpose:** **NORA** (Newport Ski Club Online Reservation Agent) sends **booking notification emails** whenever something changes—confirmations, cancellations, tentative holds, edits, and the like. Those messages arrive at the club’s **bookings** email address. This project **collects** each notice as **one line in a text log** on the server, then **sends a summary digest** of that log to the **reservationist** on a schedule you pick (for example daily). After the digest is sent, the old log is **archived** and logging starts fresh.
 
-Requires **PHP 7.4+** (PHP 8.x recommended). No Composer or database.
+You do not need a database or extra PHP libraries—only what your web host already provides.
 
-## Layout
+---
 
-| Path | Role |
-|------|------|
-| [`src/EmlBodyExtractor.php`](src/EmlBodyExtractor.php) | Full `.eml` / MIME message → envelope headers + best `text/plain` or `text/html` part (QP + multipart) |
-| [`src/RawEmailEnvelope.php`](src/RawEmailEnvelope.php) | Inbound-to-bookings vs club-sender check; merges envelope into parsed events |
-| [`src/EmailNormalizer.php`](src/EmailNormalizer.php) | HTML-ish body → normalized plain text |
-| [`src/BookingParser.php`](src/BookingParser.php) | Raw body string → structured event array |
-| [`src/BookingFormatter.php`](src/BookingFormatter.php) | Event → activity log line + digest line |
-| [`src/LogWriter.php`](src/LogWriter.php) | Append one UTF-8 line (newlines stripped) |
-| [`bin/process_booking_email.php`](bin/process_booking_email.php) | CLI / pipe entrypoint |
-| [`bin/notify_reservationist.php`](bin/notify_reservationist.php) | Mail log contents, then timestamped archive + empty log |
-| [`sample-emails/`](sample-emails/) | Saved `.eml` files (multipart + quoted-printable) used by tests |
-| [`tests/run_tests.php`](tests/run_tests.php) | Standalone assertions (no PHPUnit) |
+## How that works (simple version)
 
-## Parse one email (CLI)
+1. **Collect:** When a NORA notification arrives at the booking address, the host can **pipe** the message into a small script. The script reads the email and **adds one line** to a log file (by default under `~/logs/booking_activity.log` when mail is piped in). That line is a short, consistent summary (booking reference, dates, counts, and so on) so many notices are easy to scan.
 
-From a file:
+2. **Digest:** A **second script** runs on a **timer** (cron). If the log has anything in it, it **sends that text to the reservationist** as the body of one email—the digest—then **saves the old log** with a date in the filename and begins a fresh log.
+
+3. **Other mail:** If someone writes a normal email to the booking address (not a NORA template), it still gets a line in the log, usually **just who it is from and the subject**, so it does not look like a booking row.
+
+---
+
+## What you need
+
+- **PHP 7.4 or newer** on the server (PHP 8 is fine).
+- Hosting where you can **upload files** and use **cPanel → Forwarders** with **Pipe to a Program** (this doc is written with **Bluehost** in mind).
+- **SSH or File Manager** is enough to create a folder, set permissions, and optionally fix the first line of a script if your PHP lives in a non-standard path.
+
+---
+
+## Install (step by step)
+
+### 1. Copy the project into your home directory
+
+Upload this repository (or a zip of it) so it ends up as a folder named **`nscmailbot`** sitting **directly in your home directory**—not inside `public_html`. You should have paths like:
+
+- `nscmailbot/bin/process_booking_email.php`
+- `nscmailbot/bin/notify_reservationist.php`
+- `nscmailbot/src/` (many `.php` files)
+
+On the server, “home” is usually `/home/your_cpanel_username/`, so the full path is often `/home/your_cpanel_username/nscmailbot/`.
+
+### 2. Create a folder for the log file
+
+Create **`logs`** next to `nscmailbot` (still under your home directory), for example:
+
+- `~/logs/` → `/home/your_cpanel_username/logs/`
+
+The booking script will write **`booking_activity.log`** there when mail is piped in (see below). Make sure the account user that runs the pipe can create and write files in that folder.
+
+### 3. Make the scripts executable
+
+In SSH:
 
 ```bash
-php bin/process_booking_email.php /path/to/raw_email.txt
+chmod +x ~/nscmailbot/bin/process_booking_email.php
+chmod +x ~/nscmailbot/bin/notify_reservationist.php
 ```
 
-From stdin:
+Bluehost’s pipe option expects a **runnable script**, not “call php by hand” in the form.
+
+### 4. Point the first line of the script at your PHP binary
+
+Open **`nscmailbot/bin/process_booking_email.php`**. The **very first line** should look like:
+
+```text
+#!/usr/bin/php
+```
+
+If your host uses a different PHP (MultiPHP, EasyApache, etc.), change that line to match the path you get from SSH, for example:
 
 ```bash
-php bin/process_booking_email.php - < /path/to/raw_email.txt
+which php
 ```
 
-Append the activity line to a log (directory is created if possible). On the server, `USER` is your cPanel username (`/home/USER` is your home directory):
+Sometimes it is under `/opt/cpanel/ea-php82/root/usr/bin/php` (the number may differ). Put that full path after the `#!` on line 1. Do the same for **`notify_reservationist.php`** if you plan to run it with `./notify_reservationist.php`; otherwise running it as `php notify_reservationist.php` from cron still works without relying on the shebang.
+
+### 5. Hook up the email forwarder (pipe)
+
+In cPanel, go to **Forwarders** and add a forwarder for your booking address (for example `bookings@yourdomain.org`). Choose the option to **pipe to a program** (wording may be “Pipe to a Program” or similar).
+
+Bluehost asks for a path **relative to your home directory** and tells you **not** to type `php` or `/usr/bin/php` in the box—only the script path.
+
+Enter:
+
+```text
+nscmailbot/bin/process_booking_email.php
+```
+
+If the form shows an example with a leading pipe character (`|`), follow **your** screen’s example.
+
+**Screenshot:** The field and surrounding options should match your host’s forwarder screen. A reference capture is in the repo as **`doc/forwarder-screenshot.png`**:
+
+![cPanel forwarder: pipe to program field](doc/forwarder-screenshot.png)
+
+After you save, send a test message to the booking address and confirm that **`~/logs/booking_activity.log`** gains a new line (or fix permissions / shebang if it does not).
+
+### 6. (Optional but typical) Send the digest to the reservationist
+
+This is the second half of the purpose: **turn the collected NORA lines into one summary email** for whoever handles reservations. Use **Cron Jobs** in cPanel to run the notifier once a day (or as often as you like). It reads the whole log, **emails that text to the reservationist**, then **archives** the log file with a timestamp in the same folder and creates a new empty log.
+
+You must set environment variables the script expects. Example wrapper you could run from cron:
+
+```bash
+#!/bin/bash
+export NSC_ACTIVITY_LOG=/home/your_cpanel_username/logs/booking_activity.log
+export NSC_MAIL_TO=reservationist@example.org
+export NSC_MAIL_FROM=bookings@newportskiclub.org
+export NSC_MAIL_SUBJECT="Newport Ski Club booking activity"
+cd /home/your_cpanel_username/nscmailbot
+php bin/notify_reservationist.php
+```
+
+| Variable | Required? | Meaning |
+|----------|-----------|---------|
+| `NSC_ACTIVITY_LOG` | Yes | Full path to the same log file the pipe appends to |
+| `NSC_MAIL_TO` | Yes | Who receives the digest |
+| `NSC_MAIL_FROM` | No | Shown as the sender (default is `bookings@newportskiclub.org`) |
+| `NSC_MAIL_SUBJECT` | No | Subject line for the digest email |
+
+If the log is missing or empty, the script does nothing and exits successfully. If sending mail fails, it **does not** rename the log, so you can fix mail and run again.
+
+**Note:** Delivery uses PHP’s built-in `mail()` function, which depends on your host. If messages never arrive, you may need hosting support or a future change to use SMTP.
+
+---
+
+## Trying it without email (optional)
+
+From SSH, with the project as your current directory:
 
 ```bash
 cd ~/nscmailbot
-php bin/process_booking_email.php --log ~/logs/booking_activity.log /path/to/raw_email.txt
+php bin/process_booking_email.php "sample-emails/Cancelled Booking from 3 6 2026 to 3 7 2026.eml"
 ```
 
-Machine-readable JSON (includes `event`, `activity_line`, `digest_line`, `processed_at`):
+That prints a short summary and the same style of line that would be appended when mail is piped. Add `--log ~/logs/booking_activity.log` if you want to append during a manual test.
 
-```bash
-php bin/process_booking_email.php --json --pretty "sample-emails/Cancelled Booking from 3 6 2026 to 3 7 2026.eml"
-```
+---
 
-### Output formats
+## What ends up in the log
 
-**Activity log line** (single line; missing reference/name/datetimes appear as `-`):
+**Typical NORA notifications** get one line per email, roughly:
 
 ```text
-{processed_at_iso} | {event_type} | {booking_reference} | {contact_name} | {check_in_iso} -> {check_out_iso} | members={members} children={children} guests={guests} unknown={unknown}
+2026-04-10T08:42:11Z | CANCELLED | NP008156 | Brian Sperlongano | 2026-03-06 11:30 -> 2026-03-08 11:00 | members=1 children=0 guests=0 unknown=0
 ```
 
-**Digest line** (human-oriented; zero count categories omitted unless all zero → `0 occupants parsed`):
+**Mail from a real person to the bookings address** that is not a booking template is usually logged more simply:
 
 ```text
-{event_type}: {booking_reference} {contact_name}, {short_date_range}, {count_summary}
+2026-04-10T08:42:11Z | UNKNOWN | from="Name" <email@example.com> | subject=Their subject line
 ```
 
-## Tests
+The script recognizes common NORA email types: **confirmed (booked)**, **tentative**, **cancelled**, and short **“booking NP… was edited”** messages. Anything else is **UNKNOWN**.
+
+---
+
+## Piped mail: what actually gets fed to the script
+
+The host normally passes the **entire email** (headers and body). The code finds the readable body part and, when needed, who it is from and what it is about. You do not have to strip headers yourself.
+
+---
+
+## Tests (developers)
 
 ```bash
 php tests/run_tests.php
 ```
 
-Tests load the saved messages under [`sample-emails/`](sample-emails/) (cancellation, tentative booking, edited-booking notice, and a non-template wait-list message), plus a few inline cases for `UNKNOWN` logging and `LogWriter`.
-
-### Event types
-
-| `event_type` | When |
-|--------------|------|
-| `BOOKED` | “CONFIRMED booking” template |
-| `TENTATIVE` | “TENTATIVE booking” template |
-| `CANCELLED` | Cancellation template |
-| `EDITED` | Short “Booking NP… was edited by …” notice (no bunk table) |
-| `UNKNOWN` | Anything else (e.g. freeform mail) |
-
-**UNKNOWN logging:** When the input is a full MIME message, envelope headers are merged into the event (`envelope_from`, `envelope_to`, `envelope_subject`, etc.). If `event_type` is `UNKNOWN` **and** the message is **to** `bookings@newportskiclub.org` (from `To:` or `Delivered-To:`) **and** the sender is **not** `bookings@newportskiclub.org` (parsed from `From:`, with `Return-Path` used only when `From` has no address), the activity and digest lines are shortened to sender + subject only:
-
-- Activity: `{processed_at} | UNKNOWN | from=… | subject=…`
-- Digest: `UNKNOWN: …, …`
-
-Other `UNKNOWN` cases (bare body with no headers, or mail clearly from the club mailbox) keep the normal activity line with `-` placeholders and zero counts.
-
-The CLI runs [`EmlBodyExtractor::extractEnvelope`](src/EmlBodyExtractor.php) and [`EmlBodyExtractor::extractBodyForParser`](src/EmlBodyExtractor.php) so piping a full `.eml` or raw MIME message works the same as piping a bare body, with routing metadata available for logging.
-
-If `php` is not installed locally, for example:
+Tests use saved samples under [`sample-emails/`](sample-emails/). If PHP is not on your machine:
 
 ```bash
 docker run --rm -v "$PWD":/app -w /app php:8.2-cli php tests/run_tests.php
 ```
 
-## Notify reservationist (cron)
+---
 
-On Bluehost, keep the project at **`~/nscmailbot`** (i.e. `nscmailbot` in your home directory, full path **`/home/USERNAME/nscmailbot`**). Cron and the pipe below need **absolute** paths; replace `USER` with your cPanel username where shown.
+## Project layout (reference)
 
-Set environment variables (e.g. in a wrapper script referenced from cron):
-
-| Variable | Required | Purpose |
-|----------|----------|---------|
-| `NSC_ACTIVITY_LOG` | Yes | Path to the append-only activity log (same file `--log` uses) |
-| `NSC_MAIL_TO` | Yes | Reservationist address |
-| `NSC_MAIL_FROM` | No | `From:` header (default `bookings@newportskiclub.org`) |
-| `NSC_MAIL_SUBJECT` | No | Subject (default `New Newport Ski Club booking activity`) |
-
-Run:
-
-```bash
-cd ~/nscmailbot
-export NSC_ACTIVITY_LOG=/home/USER/logs/booking_activity.log
-export NSC_MAIL_TO=reservationist@example.org
-php bin/notify_reservationist.php
-```
-
-Behavior:
-
-- If the log file is missing, unreadable, or empty (whitespace only): exits **0** and sends nothing.
-- If `mail()` succeeds: renames the log to `basename_YYYYMMDDTHHMMSSZ.log` in the **same directory**, then creates a new empty file at the original path.
-- If `mail()` fails: exits **non-zero** and does **not** roll the log.
-
-**Note:** `mail()` depends on host configuration. If delivery fails, fix MTA/auth on the host or replace the script body with SMTP later.
-
-## cPanel pipe-to-program (Bluehost-style)
-
-Bluehost’s form asks for a path **relative to your home directory** and tells you **not** to prefix `php` or `/usr/bin/php`—the script must be **executable** and start with a **shebang** (`#!`) so the OS runs PHP for you.
-
-1. Upload the tree so it lives at **`~/nscmailbot`** (folder `nscmailbot` under your home—same layout as this repo).
-2. Create **`~/logs/`** and ensure it is writable by the user that runs the mail pipe.
-3. **Shebang:** The first line of [`bin/process_booking_email.php`](bin/process_booking_email.php) is `#!/usr/bin/php`. If your account uses a different PHP (MultiPHP / EasyApache), fix that line over SSH to match your real binary, e.g. `which php` or the path cPanel shows (sometimes under `/opt/cpanel/ea-php…`).
-4. **Executable bit (required for pipe):**
-
-   ```bash
-   chmod +x ~/nscmailbot/bin/process_booking_email.php
-   chmod +x ~/nscmailbot/bin/notify_reservationist.php
-   ```
-
-5. In **cPanel → Forwarders → Pipe to a Program**, enter **only** the path **relative to home** (no leading `|`, no `php`—unless your screen’s example shows a pipe character; follow what cPanel displays):
-
-   ```text
-   nscmailbot/bin/process_booking_email.php
-   ```
-
-6. **Logging:** With no `--log` argument, a **piped** invocation (stdin not a terminal) appends to **`$HOME/logs/booking_activity.log`** when `HOME` (or POSIX user dir) is available. You can still override with **`NSC_ACTIVITY_LOG`** in the environment, or **`--log /path/to/file`** when calling PHP yourself.
-
-7. Schedule cron for the reservationist notifier (e.g. daily), exporting **`NSC_ACTIVITY_LOG`** (and other `NSC_*` vars) to the **same** log path you expect from the pipe.
-
-## Integration notes
-
-- **Pipe input:** The handler accepts a **full RFC822 message** on stdin (headers + body); [`EmlBodyExtractor`](src/EmlBodyExtractor.php) picks the body part. If anything looks wrong on first live mail, capture stdin to a file once and inspect it.
+| Location | Role |
+|----------|------|
+| [`bin/process_booking_email.php`](bin/process_booking_email.php) | Entry point for the pipe and for manual runs |
+| [`bin/notify_reservationist.php`](bin/notify_reservationist.php) | Cron job: email log, then roll log file |
+| [`src/`](src/) | Parsing, formatting, MIME handling, log append |
+| [`sample-emails/`](sample-emails/) | Example messages for tests |
+| [`tests/run_tests.php`](tests/run_tests.php) | Self-contained checks (no Composer) |
+| [`doc/forwarder-screenshot.png`](doc/forwarder-screenshot.png) | Reference screenshot for the cPanel forwarder / pipe field |
