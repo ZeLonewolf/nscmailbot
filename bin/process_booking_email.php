@@ -28,9 +28,48 @@ function nsc_resolve_home_dir(): ?string
 }
 
 /**
- * @param ?string $explicitFromArgs null or path from --log
+ * Mail pipes on some hosts run PHP without the CLI constants STDIN/STDERR; use php://stdin instead.
+ *
+ * @return resource|false|null null = could not open
  */
-function nsc_resolve_activity_log_path(?string $explicitFromArgs): ?string
+function nsc_open_stdin()
+{
+    if (defined('STDIN')) {
+        return STDIN;
+    }
+
+    return @fopen('php://stdin', 'rb');
+}
+
+function nsc_stdin_is_terminal($stdinHandle): bool
+{
+    if ($stdinHandle === false || $stdinHandle === null) {
+        return false;
+    }
+    if (function_exists('stream_isatty')) {
+        return stream_isatty($stdinHandle);
+    }
+    if (function_exists('posix_isatty')) {
+        return posix_isatty($stdinHandle);
+    }
+
+    return false;
+}
+
+function nsc_fwrite_stderr(string $msg): void
+{
+    if (defined('STDERR')) {
+        fwrite(STDERR, $msg);
+    } else {
+        @file_put_contents('php://stderr', $msg);
+    }
+}
+
+/**
+ * @param ?string $explicitFromArgs null or path from --log
+ * @param resource|false|null $stdinHandle
+ */
+function nsc_resolve_activity_log_path(?string $explicitFromArgs, $stdinHandle): ?string
 {
     if ($explicitFromArgs !== null && $explicitFromArgs !== '') {
         return $explicitFromArgs;
@@ -39,7 +78,8 @@ function nsc_resolve_activity_log_path(?string $explicitFromArgs): ?string
     if ($fromEnv !== false && $fromEnv !== '') {
         return $fromEnv;
     }
-    $piped = function_exists('posix_isatty') && defined('STDIN') && !posix_isatty(STDIN);
+    // Piped mail: stdin is not a terminal. If we cannot tell, treat as non-TTY so logging still works.
+    $piped = !nsc_stdin_is_terminal($stdinHandle);
     if (!$piped) {
         return null;
     }
@@ -79,18 +119,23 @@ for ($i = 0, $n = count($args); $i < $n; $i++) {
     }
 }
 
-$logPath = nsc_resolve_activity_log_path($logPath);
+$stdinHandle = nsc_open_stdin();
+$logPath = nsc_resolve_activity_log_path($logPath, $stdinHandle);
 
 $raw = '';
 if (isset($positional[0]) && $positional[0] !== '-') {
     $path = $positional[0];
     if (!is_readable($path)) {
-        fwrite(STDERR, "Cannot read file: {$path}\n");
+        nsc_fwrite_stderr("Cannot read file: {$path}\n");
         exit(1);
     }
     $raw = (string) file_get_contents($path);
 } else {
-    $raw = stream_get_contents(STDIN) ?: '';
+    if ($stdinHandle !== false && $stdinHandle !== null) {
+        $raw = stream_get_contents($stdinHandle) ?: '';
+    } else {
+        $raw = '';
+    }
 }
 
 $envelope = EmlBodyExtractor::extractEnvelope($raw);
@@ -102,7 +147,7 @@ $digestLine = BookingFormatter::formatDigestLine($event);
 
 if ($logPath !== null && $logPath !== '') {
     if (!LogWriter::appendLine($logPath, $activityLine)) {
-        fwrite(STDERR, "Failed to append activity line to log: {$logPath}\n");
+        nsc_fwrite_stderr("Failed to append activity line to log: {$logPath}\n");
         exit(1);
     }
 }
