@@ -33,10 +33,11 @@ From stdin:
 php bin/process_booking_email.php - < /path/to/raw_email.txt
 ```
 
-Append the activity line to a log (directory is created if possible):
+Append the activity line to a log (directory is created if possible). On the server, `USER` is your cPanel username (`/home/USER` is your home directory):
 
 ```bash
-php bin/process_booking_email.php --log /home/USER/logs/booking_activity.log /path/to/raw_email.txt
+cd ~/nscmailbot
+php bin/process_booking_email.php --log ~/logs/booking_activity.log /path/to/raw_email.txt
 ```
 
 Machine-readable JSON (includes `event`, `activity_line`, `digest_line`, `processed_at`):
@@ -94,6 +95,8 @@ docker run --rm -v "$PWD":/app -w /app php:8.2-cli php tests/run_tests.php
 
 ## Notify reservationist (cron)
 
+On Bluehost, keep the project at **`~/nscmailbot`** (i.e. `nscmailbot` in your home directory, full path **`/home/USERNAME/nscmailbot`**). Cron and the pipe below need **absolute** paths; replace `USER` with your cPanel username where shown.
+
 Set environment variables (e.g. in a wrapper script referenced from cron):
 
 | Variable | Required | Purpose |
@@ -106,6 +109,7 @@ Set environment variables (e.g. in a wrapper script referenced from cron):
 Run:
 
 ```bash
+cd ~/nscmailbot
 export NSC_ACTIVITY_LOG=/home/USER/logs/booking_activity.log
 export NSC_MAIL_TO=reservationist@example.org
 php bin/notify_reservationist.php
@@ -119,31 +123,30 @@ Behavior:
 
 **Note:** `mail()` depends on host configuration. If delivery fails, fix MTA/auth on the host or replace the script body with SMTP later.
 
-## cPanel pipe-to-program
+## cPanel pipe-to-program (Bluehost-style)
 
-1. Upload `src/` and `bin/` outside the web root (e.g. `~/nscmailbot/`).
-2. Create a writable log directory, e.g. `~/logs/`.
-3. In **cPanel → Forwarders → Advanced Options → Pipe to a Program**, use a path that runs PHP with this script and `--log`, for example:
+Bluehost’s form asks for a path **relative to your home directory** and tells you **not** to prefix `php` or `/usr/bin/php`—the script must be **executable** and start with a **shebang** (`#!`) so the OS runs PHP for you.
 
-   ```text
-   |/usr/bin/php /home/USER/nscmailbot/bin/process_booking_email.php --log /home/USER/logs/booking_activity.log
+1. Upload the tree so it lives at **`~/nscmailbot`** (folder `nscmailbot` under your home—same layout as this repo).
+2. Create **`~/logs/`** and ensure it is writable by the user that runs the mail pipe.
+3. **Shebang:** The first line of [`bin/process_booking_email.php`](bin/process_booking_email.php) is `#!/usr/bin/php`. If your account uses a different PHP (MultiPHP / EasyApache), fix that line over SSH to match your real binary, e.g. `which php` or the path cPanel shows (sometimes under `/opt/cpanel/ea-php…`).
+4. **Executable bit (required for pipe):**
+
+   ```bash
+   chmod +x ~/nscmailbot/bin/process_booking_email.php
+   chmod +x ~/nscmailbot/bin/notify_reservationist.php
    ```
 
-   Use the PHP binary path shown in cPanel (“Select PHP version” / MultiPHP) if `/usr/bin/php` is not correct.
+5. In **cPanel → Forwarders → Pipe to a Program**, enter **only** the path **relative to home** (no leading `|`, no `php`—unless your screen’s example shows a pipe character; follow what cPanel displays):
 
-4. Ensure the user that runs the pipe (often `nobody` or a cPanel user) can **write** the log file and directory.
+   ```text
+   nscmailbot/bin/process_booking_email.php
+   ```
 
-5. Schedule cron for the reservationist notifier (e.g. daily), exporting the same `NSC_*` variables.
+6. **Logging:** With no `--log` argument, a **piped** invocation (stdin not a terminal) appends to **`$HOME/logs/booking_activity.log`** when `HOME` (or POSIX user dir) is available. You can still override with **`NSC_ACTIVITY_LOG`** in the environment, or **`--log /path/to/file`** when calling PHP yourself.
 
-### Executable bit (optional)
-
-```bash
-chmod +x bin/process_booking_email.php bin/notify_reservationist.php
-```
-
-You can then use a shebang-only pipe target if your host allows it.
+7. Schedule cron for the reservationist notifier (e.g. daily), exporting **`NSC_ACTIVITY_LOG`** (and other `NSC_*` vars) to the **same** log path you expect from the pipe.
 
 ## Integration notes
 
-- **Pipe input**: cPanel often delivers the **full RFC822 message** on stdin, not only the body. If your forwarder includes headers, add a small wrapper that strips headers (everything before the first blank line) before passing the remainder into `BookingParser::parse`, or extend the parser to accept full messages later.
-- **Next step**: confirm the actual piped payload on your host with a temporary script that logs `stdin` to a file, then adjust preprocessing if needed.
+- **Pipe input:** The handler accepts a **full RFC822 message** on stdin (headers + body); [`EmlBodyExtractor`](src/EmlBodyExtractor.php) picks the body part. If anything looks wrong on first live mail, capture stdin to a file once and inspect it.
