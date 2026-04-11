@@ -157,5 +157,15 @@ $clubLine = BookingFormatter::formatActivityLine($clubUnknown, $processedAt);
 assert_eq(strpos($clubLine, 'from=') === false, true, 'club UNKNOWN uses full activity line');
 assert_eq($clubLine, $processedAt . ' | UNKNOWN | - | - -> -', 'club UNKNOWN no occupancy tail when zero');
 
+// Body "To:" line overrides Contact Name / "edited by" when the forwarder adds a recipient line.
+$toOverrideBody = '<p>CANCELLED in DB To: Name From To Line<br><br><br>Booking Reference: NP888<br>'
+    . 'Contact Name: Other Person<br>Check-In: Friday March 6th 2026 @ 11:30 <br>Check-Out: Sunday March 8th 2026 @ 11:00<br>'
+    . 'Bunk Details Name Calculated cost Geronimo - Bunk Sperlongano, Brian (Active Member) $52.00<br>Guest comments:</p>';
+$toEv = BookingParser::parse($toOverrideBody);
+assert_eq($toEv['contact_name'], 'Name From To Line', 'To: body line wins over Contact Name');
+$editedToBody = '<p>To: Edited To Recipient<br>Booking NP008999 was edited by Brian Sperlongano Check it: https://bookings.newportskiclub.org/x</p>';
+$editedToEv = BookingParser::parse($editedToBody);
+assert_eq($editedToEv['contact_name'], 'Edited To Recipient', 'To: body line wins over edited-by name');
+
 echo "All tests passed.\n";
 exit(0);

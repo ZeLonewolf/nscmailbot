@@ -29,7 +29,9 @@ final class BookingParser
 
         $eventType = self::detectEventType($normalized, $notes);
         $ref = self::extractLabelValue($normalized, 'Booking Reference:') ?? '';
-        $contact = self::extractLabelValue($normalized, 'Contact Name:') ?? '';
+        $toName = self::extractToRecipientDisplayName($normalized);
+        $contactLabel = self::extractLabelValue($normalized, 'Contact Name:') ?? '';
+        $contact = $toName !== '' ? $toName : $contactLabel;
         $checkInRaw = self::extractLabelValue($normalized, 'Check-In:') ?? '';
         $checkOutRaw = self::extractLabelValue($normalized, 'Check-Out:') ?? '';
         $url = self::extractBookingUrl($normalized);
@@ -74,6 +76,10 @@ final class BookingParser
         }
         $ref = $m[1];
         $contact = trim($m[2]);
+        $toName = self::extractToRecipientDisplayName($normalized);
+        if ($toName !== '') {
+            $contact = $toName;
+        }
         $url = self::extractBookingUrl($normalized);
         $excerpt = self::makeExcerpt($normalized);
         $notes[] = 'parsed as booking-edited notice (no bunk block)';
@@ -120,11 +126,48 @@ final class BookingParser
         }
         $v = trim($m[1]);
         // Value often runs until next label or line break in normalized single-line blocks.
-        $v = preg_split('/\b(?:Booking Reference|Contact Name|Check-In|Check-Out|Bunk Details|Amount Owing|Customer Comment|Guest comments|Access details here):/i', $v)[0];
+        $v = preg_split('/\b(?:Booking Reference|Contact Name|Check-In|Check-Out|Bunk Details|Amount Owing|Customer Comment|Guest comments|Access details here|To):/i', $v)[0];
         $v = trim((string) $v);
         // Strip trailing noise common in check-out lines.
         $v = preg_replace('/\s+or\s+when\s+chores\s+are\s+done.*$/i', '', $v) ?? $v;
         return trim($v);
+    }
+
+    /**
+     * Body line like "To: Brian Sperlongano" (club forwarder), not the SMTP To: header.
+     * Strips angle-addr forms to the display name only.
+     */
+    private static function extractToRecipientDisplayName(string $text): string
+    {
+        if (preg_match('/\bTo:\s*(.+)/i', $text, $m) !== 1) {
+            return '';
+        }
+        $v = trim($m[1]);
+        $v = preg_split(
+            '/\b(?:(?:Booking Reference|Contact Name|Check-In|Check-Out|Bunk Details|Amount Owing|Customer Comment|Guest comments|Access details here):|Booking\s+NP\d+\b)/i',
+            $v
+        )[0];
+        $v = trim((string) $v);
+        if ($v === '') {
+            return '';
+        }
+        return self::displayNameFromRecipientField($v);
+    }
+
+    private static function displayNameFromRecipientField(string $raw): string
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return '';
+        }
+        if (preg_match('/^"(.+)"\s*</', $raw, $m) === 1) {
+            return trim($m[1]);
+        }
+        if (preg_match('/^(.+?)\s*<[^>@\s]+@[^>\s]+>/', $raw, $m) === 1) {
+            return trim($m[1], " \t\"'");
+        }
+
+        return $raw;
     }
 
     private static function extractBookingUrl(string $text): string
