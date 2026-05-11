@@ -9,6 +9,7 @@ require_once $root . '/src/EmailNormalizer.php';
 require_once $root . '/src/BookingParser.php';
 require_once $root . '/src/BookingFormatter.php';
 require_once $root . '/src/LogWriter.php';
+require_once $root . '/src/DeliveryFailureDetector.php';
 
 // Fixed instant for stable assertions → Eastern display (April = EDT).
 $processedAt = (new DateTimeImmutable('2026-04-10 08:42:11', new DateTimeZone('UTC')))
@@ -166,6 +167,15 @@ assert_eq($toEv['contact_name'], 'Name From To Line', 'To: body line wins over C
 $editedToBody = '<p>To: Edited To Recipient<br>Booking NP008999 was edited by Brian Sperlongano Check it: https://bookings.newportskiclub.org/x</p>';
 $editedToEv = BookingParser::parse($editedToBody);
 assert_eq($editedToEv['contact_name'], 'Edited To Recipient', 'To: body line wins over edited-by name');
+
+// Delivery-failure / bounce messages must not be treated as bookings if re-piped.
+$bounceSnippet = "This message was created automatically by mail delivery software.\r\n\r\n"
+    . "The following address(es) failed:\r\n\r\n  pipe to |/home/user/nscmailbot/bin/process_booking_email.php\r\n";
+assert_eq(DeliveryFailureDetector::looksLikeAutomatedDeliveryFailure($bounceSnippet), true, 'bounce snippet detected');
+$cancelRaw = (string) file_get_contents($emlDir . '/Cancelled Booking from 3 6 2026 to 3 7 2026.eml');
+assert_eq(DeliveryFailureDetector::looksLikeAutomatedDeliveryFailure($cancelRaw), false, 'real NORA .eml not bounce');
+$dsn = "Content-Type: multipart/report; report-type=delivery-status; boundary=\"x\"\r\n\r\n--x\r\n";
+assert_eq(DeliveryFailureDetector::looksLikeAutomatedDeliveryFailure($dsn), true, 'multipart/report delivery-status');
 
 echo "All tests passed.\n";
 exit(0);

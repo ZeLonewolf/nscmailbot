@@ -98,11 +98,13 @@ require_once $root . '/src/BookingParser.php';
 require_once $root . '/src/BookingFormatter.php';
 require_once $root . '/src/LogWriter.php';
 require_once $root . '/src/LogTimestamp.php';
+require_once $root . '/src/DeliveryFailureDetector.php';
 
 $args = array_slice($argv, 1);
 $logPath = null;
 $jsonOnly = false;
 $prettyJson = false;
+$verboseHumanOutput = false;
 $positional = [];
 
 for ($i = 0, $n = count($args); $i < $n; $i++) {
@@ -111,6 +113,8 @@ for ($i = 0, $n = count($args); $i < $n; $i++) {
         $jsonOnly = true;
     } elseif ($a === '--pretty') {
         $prettyJson = true;
+    } elseif ($a === '--verbose' || $a === '-v') {
+        $verboseHumanOutput = true;
     } elseif ($a === '--log') {
         $logPath = $args[++$i] ?? null;
     } elseif (strncmp($a, '--log=', 6) === 0) {
@@ -139,6 +143,16 @@ if (isset($positional[0]) && $positional[0] !== '-') {
     }
 }
 
+if (DeliveryFailureDetector::looksLikeAutomatedDeliveryFailure($raw)) {
+    exit(0);
+}
+
+$inputFromFile = isset($positional[0]) && $positional[0] !== '-';
+$stdinIsTty = nsc_stdin_is_terminal($stdinHandle);
+// Mail pipes: many MTAs treat any stdout as delivery failure. Only print to stdout when
+// running interactively, reading a .eml path, or --verbose / -v.
+$stdoutAllowed = $verboseHumanOutput || $inputFromFile || $stdinIsTty;
+
 $envelope = EmlBodyExtractor::extractEnvelope($raw);
 $body = EmlBodyExtractor::extractBodyForParser($raw);
 $event = RawEmailEnvelope::enrichParsedEvent(BookingParser::parse($body), $envelope);
@@ -154,21 +168,25 @@ if ($logPath !== null && $logPath !== '') {
 }
 
 if ($jsonOnly) {
-    $payload = [
-        'processed_at' => $processedAt,
-        'event' => $event,
-        'activity_line' => $activityLine,
-        'digest_line' => $digestLine,
-    ];
-    $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
-    if ($prettyJson) {
-        $flags |= JSON_PRETTY_PRINT;
+    if ($stdoutAllowed) {
+        $payload = [
+            'processed_at' => $processedAt,
+            'event' => $event,
+            'activity_line' => $activityLine,
+            'digest_line' => $digestLine,
+        ];
+        $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+        if ($prettyJson) {
+            $flags |= JSON_PRETTY_PRINT;
+        }
+        echo json_encode($payload, $flags) . "\n";
     }
-    echo json_encode($payload, $flags) . "\n";
     exit(0);
 }
 
-echo "Digest:\n{$digestLine}\n\n";
-echo "Activity:\n{$activityLine}\n\n";
-echo "Structured (JSON):\n";
-echo json_encode($event, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
+if ($stdoutAllowed) {
+    echo "Digest:\n{$digestLine}\n\n";
+    echo "Activity:\n{$activityLine}\n\n";
+    echo "Structured (JSON):\n";
+    echo json_encode($event, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
+}
