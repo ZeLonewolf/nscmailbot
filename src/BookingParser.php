@@ -22,6 +22,15 @@ final class BookingParser
             return self::emptyEvent('Empty input after normalization', $normalized, $notes);
         }
 
+        if (self::isMemberFacingNoraNotice($normalized)) {
+            return self::emptyEvent(
+                'Member-facing NORA notice (skipped; officer mail uses Booking Reference / To the Booking Officer)',
+                $normalized,
+                $notes,
+                true
+            );
+        }
+
         $edited = self::tryParseEditedBooking($normalized, $notes);
         if ($edited !== null) {
             return $edited;
@@ -142,9 +151,29 @@ final class BookingParser
     }
 
     /**
-     * Body line like "To: Brian Sperlongano" (club forwarder), not the SMTP To: header.
-     * Strips angle-addr forms to the display name only.
+     * Member receipt / "you booked" notices (markdown fields, postal To, etc.). Not the officer DB template.
      */
+    private static function isMemberFacingNoraNotice(string $t): bool
+    {
+        if (stripos($t, 'You made a booking at Newport Ski Club') !== false) {
+            return true;
+        }
+        if (stripos($t, 'To the Booking Officer') !== false) {
+            return false;
+        }
+        if (preg_match('/\bA\s+(?:TENTATIVE|CONFIRMED)\s+booking\s+at\s+Newport\s+Ski\s+Club\b/i', $t) === 1) {
+            return false;
+        }
+        if (preg_match('/\bTentative\s+Booking\b/i', $t) !== 1 && preg_match('/\bConfirmed\s+Booking\b/i', $t) !== 1) {
+            return false;
+        }
+        if (preg_match('/\*+\s*Check-In\s*\*+/i', $t) === 1 || preg_match('/\*+\s*Booking\s+ID\s*\*+/i', $t) === 1) {
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * True when the body "To:" line looks like the club forwarder added a person name,
      * not a quoted RFC822 block (Reply-To:, booking template text, URLs, etc.).
@@ -174,6 +203,7 @@ final class BookingParser
         return true;
     }
 
+    /** First body `To:` value (forwarder), truncated at officer-style `Label:` markers. */
     private static function extractToRecipientDisplayName(string $text): string
     {
         if (preg_match('/\bTo:\s*(.+)/i', $text, $m) !== 1) {
@@ -557,10 +587,10 @@ final class BookingParser
      * @param list<string> $notes
      * @return array<string, mixed>
      */
-    private static function emptyEvent(string $reason, string $normalized, array $notes): array
+    private static function emptyEvent(string $reason, string $normalized, array $notes, bool $suppressActivityLog = false): array
     {
         $notes[] = $reason;
-        return [
+        $out = [
             'event_type' => 'UNKNOWN',
             'booking_reference' => null,
             'contact_name' => null,
@@ -572,5 +602,10 @@ final class BookingParser
             'parsing_notes' => $notes,
             'raw_excerpt' => self::makeExcerpt($normalized),
         ];
+        if ($suppressActivityLog) {
+            $out['suppress_activity_log'] = true;
+        }
+
+        return $out;
     }
 }

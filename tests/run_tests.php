@@ -176,6 +176,31 @@ $forwardNoise = '-------- Original Message -------- To: bookings@newportskiclub.
 $fwdEv = BookingParser::parse($forwardNoise);
 assert_eq($fwdEv['contact_name'], 'Real Member Person', 'implausible quoted To: defers to Contact Name');
 
+// Gmail-forwarded member notice: *Check-In* / *Booking ID* / postal "To:" block (no Booking Reference: / Check-In:).
+$gmailFwdTentative = <<<'NSCMAIL'
+---------- Forwarded message ---------
+Tentative Booking
+
+To: Brian Sperlongano
+22 Woodland Dr.
+N. Kingstown RI 02852
+
+You made a booking at Newport Ski Club.
+
+*Check-In* Friday March 13th 2026 @ 11:30
+*Check-Out* Monday March 16th 2026 @ 11:00 or when chores are done
+
+Bunk Details Name Tariff Calculated
+cost
+Chief - Bunk 14 (Top) - Men's Side Sperlongano, Brian (Active Member or
+Member Child (Age 12+)) $74.00
+*Food Reservations*
+*Booking ID* NP008344
+NSCMAIL;
+$gf = BookingParser::parse($gmailFwdTentative);
+assert_eq($gf['event_type'], 'UNKNOWN', 'member-facing NORA is not parsed as booking');
+assert_eq($gf['suppress_activity_log'] ?? false, true, 'member skip suppresses activity log line');
+
 // Delivery-failure / bounce messages must not be treated as bookings if re-piped.
 $bounceSnippet = "This message was created automatically by mail delivery software.\r\n\r\n"
     . "The following address(es) failed:\r\n\r\n  pipe to |/home/user/nscmailbot/bin/process_booking_email.php\r\n";

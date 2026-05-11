@@ -159,7 +159,7 @@ $processedAt = LogTimestamp::now();
 $activityLine = BookingFormatter::formatActivityLine($event, $processedAt);
 $digestLine = BookingFormatter::formatDigestLine($event);
 
-if ($logPath !== null && $logPath !== '') {
+if ($logPath !== null && $logPath !== '' && empty($event['suppress_activity_log'])) {
     if (!LogWriter::appendLine($logPath, $activityLine)) {
         nsc_fwrite_stderr("Failed to append activity line to log: {$logPath}\n");
         exit(1);
