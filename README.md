@@ -60,8 +60,10 @@ Bluehost’s pipe option expects a **runnable script**, not “call php by hand�
 Open **`nscmailbot/bin/process_booking_email.php`**. The **very first line** should look like:
 
 ```text
-#!/usr/bin/php
+#!/usr/bin/php -q
 ```
+
+The **`-q`** is important for **pipe delivery**: some hosts run the shebang PHP as CGI, which otherwise prints a default `Content-type: text/html` line to stdout; Exim treats any stdout as a failed delivery and bounces. `-q` suppresses that header (and is harmless for CLI).
 
 If your host uses a different PHP (MultiPHP, EasyApache, etc.), change that line to match the path you get from SSH, for example:
 
@@ -69,7 +71,7 @@ If your host uses a different PHP (MultiPHP, EasyApache, etc.), change that line
 which php
 ```
 
-Sometimes it is under `/opt/cpanel/ea-php82/root/usr/bin/php` (the number may differ). Put that full path after the `#!` on line 1. Do the same for **`notify_reservationist.php`** if you plan to run it with `./notify_reservationist.php`; otherwise running it as `php notify_reservationist.php` from cron still works without relying on the shebang.
+Sometimes it is under `/opt/cpanel/ea-php82/root/usr/bin/php` (the number may differ). Put that full path after the `#!` on line 1, and keep **`-q`** after it (for example `#!/opt/cpanel/ea-php82/root/usr/bin/php -q`). Do the same for **`notify_reservationist.php`** if you plan to run it with `./notify_reservationist.php`; otherwise running it as `php notify_reservationist.php` from cron still works without relying on the shebang.
 
 ### 5. Hook up the email forwarder (pipe)
 

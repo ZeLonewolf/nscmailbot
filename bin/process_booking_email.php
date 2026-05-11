@@ -1,4 +1,4 @@
-#!/usr/bin/php
+#!/usr/bin/php -q
 <?php
 
 declare(strict_types=1);
@@ -6,9 +6,20 @@ declare(strict_types=1);
 /**
  * Bluehost/cPanel “pipe to program”: path is relative to home, with no `php` prefix—only this
  * executable script. Shebang must point at your server’s PHP (see README if MultiPHP uses another path).
+ *
+ * The `-q` flag matters when the host runs this PHP build as CGI: it suppresses the default
+ * `Content-type: text/html` header on stdout, which Exim treats as a pipe delivery failure.
  */
 
 $root = dirname(__DIR__);
+
+/** Discard buffered stdout (accidental output from includes or CGI defaults). */
+function nsc_discard_stdout_buffer(): void
+{
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+}
 
 /** @return string|null */
 function nsc_resolve_home_dir(): ?string
@@ -100,6 +111,10 @@ require_once $root . '/src/LogWriter.php';
 require_once $root . '/src/LogTimestamp.php';
 require_once $root . '/src/DeliveryFailureDetector.php';
 
+if (ob_get_level() === 0) {
+    ob_start();
+}
+
 $args = array_slice($argv, 1);
 $logPath = null;
 $jsonOnly = false;
@@ -131,6 +146,7 @@ $raw = '';
 if (isset($positional[0]) && $positional[0] !== '-') {
     $path = $positional[0];
     if (!is_readable($path)) {
+        nsc_discard_stdout_buffer();
         nsc_fwrite_stderr("Cannot read file: {$path}\n");
         exit(1);
     }
@@ -144,6 +160,7 @@ if (isset($positional[0]) && $positional[0] !== '-') {
 }
 
 if (DeliveryFailureDetector::looksLikeAutomatedDeliveryFailure($raw)) {
+    nsc_discard_stdout_buffer();
     exit(0);
 }
 
@@ -161,6 +178,7 @@ $digestLine = BookingFormatter::formatDigestLine($event);
 
 if ($logPath !== null && $logPath !== '' && empty($event['suppress_activity_log'])) {
     if (!LogWriter::appendLine($logPath, $activityLine)) {
+        nsc_discard_stdout_buffer();
         nsc_fwrite_stderr("Failed to append activity line to log: {$logPath}\n");
         exit(1);
     }
@@ -168,6 +186,7 @@ if ($logPath !== null && $logPath !== '' && empty($event['suppress_activity_log'
 
 if ($jsonOnly) {
     if ($stdoutAllowed) {
+        nsc_discard_stdout_buffer();
         $payload = [
             'processed_at' => $processedAt,
             'event' => $event,
@@ -179,13 +198,18 @@ if ($jsonOnly) {
             $flags |= JSON_PRETTY_PRINT;
         }
         echo json_encode($payload, $flags) . "\n";
+    } else {
+        nsc_discard_stdout_buffer();
     }
     exit(0);
 }
 
 if ($stdoutAllowed) {
+    nsc_discard_stdout_buffer();
     echo "Digest:\n{$digestLine}\n\n";
     echo "Activity:\n{$activityLine}\n\n";
     echo "Structured (JSON):\n";
     echo json_encode($event, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
+} else {
+    nsc_discard_stdout_buffer();
 }
