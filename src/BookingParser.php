@@ -30,6 +30,10 @@ final class BookingParser
         $eventType = self::detectEventType($normalized, $notes);
         $ref = self::extractLabelValue($normalized, 'Booking Reference:') ?? '';
         $toName = self::extractToRecipientDisplayName($normalized);
+        if ($toName !== '' && !self::toRecipientFromBodyLineIsPlausible($toName)) {
+            $notes[] = 'contact: ignored implausible body To: (quoted forward / template noise)';
+            $toName = '';
+        }
         $contactLabel = self::extractLabelValue($normalized, 'Contact Name:') ?? '';
         $contact = $toName !== '' ? $toName : $contactLabel;
         $checkInRaw = self::extractLabelValue($normalized, 'Check-In:') ?? '';
@@ -77,6 +81,10 @@ final class BookingParser
         $ref = $m[1];
         $contact = trim($m[2]);
         $toName = self::extractToRecipientDisplayName($normalized);
+        if ($toName !== '' && !self::toRecipientFromBodyLineIsPlausible($toName)) {
+            $notes[] = 'contact: ignored implausible body To: (quoted forward / template noise)';
+            $toName = '';
+        }
         if ($toName !== '') {
             $contact = $toName;
         }
@@ -137,6 +145,35 @@ final class BookingParser
      * Body line like "To: Brian Sperlongano" (club forwarder), not the SMTP To: header.
      * Strips angle-addr forms to the display name only.
      */
+    /**
+     * True when the body "To:" line looks like the club forwarder added a person name,
+     * not a quoted RFC822 block (Reply-To:, booking template text, URLs, etc.).
+     */
+    private static function toRecipientFromBodyLineIsPlausible(string $name): bool
+    {
+        $n = trim($name);
+        if ($n === '' || strlen($n) > 100) {
+            return false;
+        }
+        if (stripos($n, 'Reply-To:') !== false) {
+            return false;
+        }
+        if (preg_match('/\bhttps?:\/\//i', $n) === 1) {
+            return false;
+        }
+        if (preg_match('/\b(CONFIRMED|TENTATIVE|CANCELLED|CANCELED)\s+booking\b/i', $n) === 1) {
+            return false;
+        }
+        if (stripos($n, 'booking database') !== false) {
+            return false;
+        }
+        if (stripos($n, 'To the Booking Officer') !== false) {
+            return false;
+        }
+
+        return true;
+    }
+
     private static function extractToRecipientDisplayName(string $text): string
     {
         if (preg_match('/\bTo:\s*(.+)/i', $text, $m) !== 1) {

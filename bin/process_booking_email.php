@@ -148,10 +148,9 @@ if (DeliveryFailureDetector::looksLikeAutomatedDeliveryFailure($raw)) {
 }
 
 $inputFromFile = isset($positional[0]) && $positional[0] !== '-';
-$stdinIsTty = nsc_stdin_is_terminal($stdinHandle);
-// Mail pipes: many MTAs treat any stdout as delivery failure. Only print to stdout when
-// running interactively, reading a .eml path, or --verbose / -v.
-$stdoutAllowed = $verboseHumanOutput || $inputFromFile || $stdinIsTty;
+// Mail is always stdin with no path; cPanel/Exim often report stdin as a TTY, so never rely
+// on isatty(). Only print Digest/JSON when a .eml file path is given or --verbose / -v.
+$stdoutAllowed = $verboseHumanOutput || $inputFromFile;
 
 $envelope = EmlBodyExtractor::extractEnvelope($raw);
 $body = EmlBodyExtractor::extractBodyForParser($raw);

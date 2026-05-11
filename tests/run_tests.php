@@ -168,6 +168,14 @@ $editedToBody = '<p>To: Edited To Recipient<br>Booking NP008999 was edited by Br
 $editedToEv = BookingParser::parse($editedToBody);
 assert_eq($editedToEv['contact_name'], 'Edited To Recipient', 'To: body line wins over edited-by name');
 
+// Forwarded / quoted blocks often contain "To: bookings@… Reply-To: …"; must not steal Contact Name.
+$forwardNoise = '-------- Original Message -------- To: bookings@newportskiclub.org Reply-To: marcianoproductions@yahoo.com To the Booking Officer, '
+    . 'A TENTATIVE booking at Newport Ski Club has been recorded in the booking database. Booking Reference: NP008731 '
+    . 'Contact Name: Real Member Person Check-In: Friday May 15th 2026 @ 11:30 Check-Out: Sunday May 17th 2026 @ 11:00 '
+    . 'Bunk Details Name Calculated cost Geronimo - Bunk Member, Test (Active Member) $52.00';
+$fwdEv = BookingParser::parse($forwardNoise);
+assert_eq($fwdEv['contact_name'], 'Real Member Person', 'implausible quoted To: defers to Contact Name');
+
 // Delivery-failure / bounce messages must not be treated as bookings if re-piped.
 $bounceSnippet = "This message was created automatically by mail delivery software.\r\n\r\n"
     . "The following address(es) failed:\r\n\r\n  pipe to |/home/user/nscmailbot/bin/process_booking_email.php\r\n";
